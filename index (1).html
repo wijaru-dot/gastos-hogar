@@ -1,0 +1,1065 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#4f46e5">
+<title>Gastos Hogar</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f0f2f5;
+    --card: #ffffff;
+    --primary: #4f46e5;
+    --primary-light: #eef2ff;
+    --secondary: #ec4899;
+    --secondary-light: #fdf2f8;
+    --text: #1e1b4b;
+    --text-muted: #6b7280;
+    --border: #e5e7eb;
+    --success: #10b981;
+    --warning: #f59e0b;
+    --danger: #dc2626;
+    --radius: 16px;
+    --radius-sm: 10px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body { font-family: 'Nunito', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; max-width: 430px; margin: 0 auto; position: relative; }
+
+  .header { background: var(--primary); color: white; padding: 20px 20px 28px; position: relative; overflow: hidden; }
+  .header::before { content: ''; position: absolute; top: -40px; right: -40px; width: 150px; height: 150px; background: rgba(255,255,255,0.06); border-radius: 50%; }
+  .header::after { content: ''; position: absolute; bottom: -60px; left: -20px; width: 180px; height: 180px; background: rgba(255,255,255,0.04); border-radius: 50%; }
+  .header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; position: relative; z-index: 1; }
+  .app-title { font-size: 18px; font-weight: 800; }
+  .header-right { display: flex; align-items: center; gap: 10px; }
+  .sync-icon-wrap { position: relative; cursor: pointer; font-size: 18px; line-height: 1; }
+  .sync-badge { position: absolute; top: -3px; right: -3px; width: 8px; height: 8px; background: #f59e0b; border-radius: 50%; border: 1.5px solid var(--primary); display: none; }
+  .sync-badge.show { display: block; }
+  .user-badge { background: rgba(255,255,255,0.2); border-radius: 20px; padding: 6px 14px; font-size: 13px; font-weight: 700; cursor: pointer; }
+  .saldo-box { background: rgba(255,255,255,0.15); border-radius: var(--radius); padding: 16px; position: relative; z-index: 1; }
+  .saldo-label { font-size: 12px; opacity: 0.8; margin-bottom: 4px; }
+  .saldo-amount { font-size: 32px; font-weight: 800; }
+  .saldo-quien { font-size: 12px; opacity: 0.75; margin-top: 4px; }
+  .porcentajes { display: flex; gap: 8px; margin-top: 12px; }
+  .pct-pill { flex: 1; background: rgba(255,255,255,0.15); border-radius: 8px; padding: 6px 10px; }
+  .pct-name { font-size: 11px; opacity: 0.8; }
+  .pct-val { font-size: 16px; font-weight: 800; }
+
+  .nav { display: flex; background: var(--card); border-bottom: 1px solid var(--border); }
+  .nav-btn { flex: 1; padding: 12px 4px; text-align: center; font-size: 11px; font-weight: 700; color: var(--text-muted); border: none; background: none; cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.2s; font-family: 'Nunito', sans-serif; }
+  .nav-btn.active { color: var(--primary); border-bottom-color: var(--primary); }
+
+  .content { padding: 16px; padding-bottom: 100px; }
+  .card { background: var(--card); border-radius: var(--radius); padding: 16px; margin-bottom: 12px; border: 1px solid var(--border); }
+  .card-title { font-size: 13px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; }
+
+  .gasto-item { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+  .gasto-item:last-child { border-bottom: none; padding-bottom: 0; }
+  .gasto-icon { width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 17px; flex-shrink: 0; }
+  .gasto-info { flex: 1; min-width: 0; }
+  .gasto-desc { font-size: 14px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .gasto-meta { font-size: 11px; color: var(--text-muted); margin-top: 2px; display: flex; gap: 5px; align-items: center; flex-wrap: wrap; }
+  .gasto-nota { font-size: 11px; color: var(--text-muted); margin-top: 2px; font-style: italic; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .who-badge { font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px; }
+  .who-w { background: var(--primary-light); color: var(--primary); }
+  .who-r { background: var(--secondary-light); color: var(--secondary); }
+  .rec-badge { font-size: 10px; font-weight: 700; padding: 2px 5px; border-radius: 4px; background: #fef3c7; color: #92400e; }
+  .receipt-link { font-size: 10px; color: var(--primary); font-weight: 700; cursor: pointer; }
+  .gasto-right { text-align: right; flex-shrink: 0; }
+  .gasto-monto { font-size: 14px; font-weight: 800; }
+  .gasto-date { font-size: 10px; color: var(--text-muted); }
+  .gasto-actions { display: flex; gap: 2px; flex-shrink: 0; }
+  .gasto-btn { font-size: 13px; cursor: pointer; color: var(--text-muted); padding: 4px 5px; border: none; background: none; font-family: 'Nunito', sans-serif; line-height: 1; }
+
+  .fab { position: fixed; bottom: 24px; right: 24px; width: 60px; height: 60px; background: var(--primary); color: white; border-radius: 50%; border: none; font-size: 28px; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 20px rgba(79,70,229,0.4); z-index: 100; transition: transform 0.2s; }
+  .fab:active { transform: scale(0.92); }
+
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 200; align-items: flex-end; justify-content: center; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: var(--card); border-radius: 24px 24px 0 0; padding: 20px; width: 100%; max-width: 430px; max-height: 92vh; overflow-y: auto; }
+  .modal-handle { width: 40px; height: 4px; background: var(--border); border-radius: 2px; margin: 0 auto 16px; }
+  .modal-title { font-size: 18px; font-weight: 800; margin-bottom: 16px; }
+
+  .form-group { margin-bottom: 14px; }
+  .form-label { font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; display: block; }
+  .form-input { width: 100%; padding: 12px 14px; border: 1.5px solid var(--border); border-radius: var(--radius-sm); font-size: 16px; font-family: 'Nunito', sans-serif; font-weight: 600; background: var(--bg); color: var(--text); outline: none; transition: border-color 0.2s; }
+  .form-input:focus { border-color: var(--primary); }
+  .form-textarea { width: 100%; padding: 10px 14px; border: 1.5px solid var(--border); border-radius: var(--radius-sm); font-size: 14px; font-family: 'Nunito', sans-serif; font-weight: 600; background: var(--bg); color: var(--text); outline: none; resize: none; height: 68px; transition: border-color 0.2s; }
+  .form-textarea:focus { border-color: var(--primary); }
+
+  .who-selector { display: flex; gap: 8px; }
+  .who-btn { flex: 1; padding: 12px; border: 2px solid var(--border); border-radius: var(--radius-sm); font-size: 14px; font-weight: 700; background: var(--bg); cursor: pointer; transition: all 0.2s; font-family: 'Nunito', sans-serif; }
+  .who-btn.selected-w { background: var(--primary-light); border-color: var(--primary); color: var(--primary); }
+  .who-btn.selected-r { background: var(--secondary-light); border-color: var(--secondary); color: var(--secondary); }
+
+  .cats-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+  .cat-btn { padding: 10px 6px; border: 1.5px solid var(--border); border-radius: var(--radius-sm); font-size: 12px; font-weight: 700; background: var(--bg); cursor: pointer; text-align: center; transition: all 0.2s; font-family: 'Nunito', sans-serif; color: var(--text); }
+  .cat-btn.selected { background: var(--primary-light); border-color: var(--primary); color: var(--primary); }
+  .cat-btn .cat-icon { font-size: 20px; display: block; margin-bottom: 2px; }
+
+  .btn-primary { width: 100%; padding: 14px; background: var(--primary); color: white; border: none; border-radius: var(--radius-sm); font-size: 16px; font-weight: 800; cursor: pointer; font-family: 'Nunito', sans-serif; transition: opacity 0.2s; margin-top: 8px; }
+  .btn-primary:active { opacity: 0.85; }
+  .btn-secondary { width: 100%; padding: 12px; background: var(--bg); color: var(--text); border: 1.5px solid var(--border); border-radius: var(--radius-sm); font-size: 14px; font-weight: 700; cursor: pointer; font-family: 'Nunito', sans-serif; margin-top: 8px; }
+  .btn-danger { width: 100%; padding: 12px; background: #fef2f2; color: var(--danger); border: 1.5px solid #fecaca; border-radius: var(--radius-sm); font-size: 14px; font-weight: 700; cursor: pointer; font-family: 'Nunito', sans-serif; margin-top: 8px; }
+
+  .resumen-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border); }
+  .resumen-row:last-child { border-bottom: none; }
+  .resumen-label { font-size: 14px; color: var(--text-muted); font-weight: 600; }
+  .resumen-val { font-size: 15px; font-weight: 800; }
+  .highlight-box { border-radius: var(--radius-sm); padding: 14px; text-align: center; margin-top: 12px; }
+  .highlight-box.positive { background: #ecfdf5; }
+  .highlight-box.negative { background: var(--primary-light); }
+  .highlight-label { font-size: 12px; font-weight: 700; color: var(--text-muted); }
+  .highlight-amount { font-size: 28px; font-weight: 800; margin-top: 4px; }
+  .highlight-box.positive .highlight-amount { color: var(--success); }
+  .highlight-box.negative .highlight-amount { color: var(--primary); }
+
+  .salary-card { background: var(--primary-light); border-radius: var(--radius); padding: 14px; margin-bottom: 12px; border: 1.5px solid #c7d2fe; }
+  .salary-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+  .salary-row:last-child { margin-bottom: 0; }
+  .salary-name { font-size: 14px; font-weight: 700; min-width: 80px; }
+  .salary-input { flex: 1; padding: 8px 12px; border: 1.5px solid #c7d2fe; border-radius: 8px; font-size: 14px; font-weight: 700; font-family: 'Nunito', sans-serif; background: white; color: var(--text); outline: none; }
+  .salary-input:focus { border-color: var(--primary); }
+
+  .periodo-card { background: var(--card); border-radius: var(--radius); padding: 14px; margin-bottom: 10px; border: 1px solid var(--border); }
+  .periodo-header { display: flex; justify-content: space-between; align-items: flex-start; cursor: pointer; }
+  .periodo-title { font-size: 14px; font-weight: 800; }
+  .periodo-fecha { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+  .periodo-total { font-size: 16px; font-weight: 800; color: var(--primary); }
+  .periodo-badge { font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 4px; background: #dcfce7; color: #16a34a; margin-top: 4px; display: inline-block; }
+  .periodo-gastos { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); display: none; }
+  .periodo-gastos.open { display: block; }
+
+  .empty { text-align: center; padding: 40px 20px; color: var(--text-muted); }
+  .empty-icon { font-size: 48px; margin-bottom: 12px; }
+  .empty-text { font-size: 14px; font-weight: 600; }
+
+  .cat-manage { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .cat-manage-icon { font-size: 20px; width: 36px; text-align: center; }
+  .cat-manage-name { flex: 1; font-size: 14px; font-weight: 700; }
+  .cat-manage-del { color: var(--danger); font-size: 18px; cursor: pointer; padding: 4px; }
+
+  .tag { display: inline-block; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 4px; background: var(--primary-light); color: var(--primary); }
+
+  .recurrente-item { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+  .recurrente-item:last-child { border-bottom: none; }
+  .recurrente-info { flex: 1; min-width: 0; }
+  .recurrente-name { font-size: 14px; font-weight: 700; }
+  .recurrente-meta { font-size: 11px; color: var(--text-muted); margin-top: 2px; display: flex; gap: 5px; align-items: center; }
+  .recurrente-monto { font-size: 14px; font-weight: 800; color: var(--primary); flex-shrink: 0; }
+
+  .notif-banner { background: #fef3c7; border: 1.5px solid #fcd34d; border-radius: var(--radius-sm); padding: 10px 14px; margin-bottom: 12px; display: none; }
+  .notif-banner.show { display: block; }
+  .notif-text { font-size: 13px; font-weight: 700; color: #92400e; }
+  .notif-sub { font-size: 11px; color: #b45309; margin-top: 2px; font-weight: 600; }
+
+  .sync-section { background: var(--primary-light); border-radius: var(--radius); padding: 16px; margin-bottom: 12px; border: 1.5px solid #c7d2fe; }
+  .sync-input { width: 100%; padding: 10px 12px; border: 1.5px solid #c7d2fe; border-radius: 8px; font-size: 13px; font-family: 'Nunito', sans-serif; font-weight: 600; background: white; color: var(--text); outline: none; margin-top: 6px; }
+  .sync-input:focus { border-color: var(--primary); }
+  .sync-label { font-size: 12px; font-weight: 700; color: var(--primary); text-transform: uppercase; letter-spacing: 0.5px; }
+  .step-box { background: white; border-radius: 10px; padding: 12px 14px; margin-bottom: 8px; border: 1px solid #c7d2fe; }
+  .step-num { display: inline-block; background: var(--primary); color: white; font-size: 11px; font-weight: 800; width: 20px; height: 20px; border-radius: 50%; text-align: center; line-height: 20px; margin-right: 6px; }
+  .step-text { font-size: 13px; font-weight: 600; color: var(--text); }
+  .step-link { color: var(--primary); font-size: 12px; font-weight: 700; display: block; margin-top: 4px; word-break: break-all; }
+
+  .receipt-preview { width: 100%; max-height: 160px; object-fit: cover; border-radius: var(--radius-sm); margin-top: 8px; border: 1px solid var(--border); }
+  .receipt-viewer { width: 100%; max-height: 65vh; object-fit: contain; border-radius: var(--radius-sm); }
+
+  .recurrentes-check { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border); }
+  .recurrentes-check:last-of-type { border-bottom: none; }
+  .recurrentes-check label { flex: 1; font-size: 13px; font-weight: 700; color: var(--text); cursor: pointer; }
+  .recurrentes-check input[type=checkbox] { width: 18px; height: 18px; accent-color: var(--primary); flex-shrink: 0; }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .spinning { display: inline-block; animation: spin 1s linear infinite; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-top">
+    <div class="app-title">🏠 Gastos Hogar</div>
+    <div class="header-right">
+      <div class="sync-icon-wrap" onclick="showTab('config')" title="Sincronización">
+        <span id="syncIcon">☁️</span>
+        <div class="sync-badge" id="syncBadge"></div>
+      </div>
+      <div class="user-badge" onclick="toggleUser()" id="userBadge">William</div>
+    </div>
+  </div>
+  <div class="saldo-box">
+    <div class="saldo-label" id="saldoLabel">Calculando...</div>
+    <div class="saldo-amount" id="saldoAmount">$0.00</div>
+    <div class="saldo-quien" id="saldoQuien"></div>
+  </div>
+  <div class="porcentajes">
+    <div class="pct-pill"><div class="pct-name">William</div><div class="pct-val" id="pctW">—</div></div>
+    <div class="pct-pill"><div class="pct-name">Rosario</div><div class="pct-val" id="pctR">—</div></div>
+  </div>
+</div>
+
+<div class="nav">
+  <button class="nav-btn active" onclick="showTab('gastos')" id="tab-gastos">Gastos</button>
+  <button class="nav-btn" onclick="showTab('recurrentes')" id="tab-recurrentes">Fijos</button>
+  <button class="nav-btn" onclick="showTab('resumen')" id="tab-resumen">Resumen</button>
+  <button class="nav-btn" onclick="showTab('historial')" id="tab-historial">Historial</button>
+  <button class="nav-btn" onclick="showTab('config')" id="tab-config">Config</button>
+</div>
+
+<div class="content">
+  <div id="tab-gastos-content"></div>
+  <div id="tab-recurrentes-content" style="display:none"></div>
+  <div id="tab-resumen-content" style="display:none"></div>
+  <div id="tab-historial-content" style="display:none"></div>
+  <div id="tab-config-content" style="display:none"></div>
+</div>
+
+<button class="fab" onclick="openModal('agregar')" id="fab">+</button>
+
+<!-- Modal Agregar/Editar Gasto -->
+<div class="modal-overlay" id="modal-agregar">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="modalAgregarTitle">Nuevo gasto</div>
+    <div class="form-group">
+      <label class="form-label">¿Quién paga?</label>
+      <div class="who-selector">
+        <button class="who-btn selected-w" id="whoW" onclick="selectWho('W')">William</button>
+        <button class="who-btn" id="whoR" onclick="selectWho('R')">Rosario</button>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Monto (CAD $)</label>
+      <input class="form-input" type="number" id="montoInput" placeholder="0.00" step="0.01" min="0" inputmode="decimal">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Descripción</label>
+      <input class="form-input" type="text" id="descInput" placeholder="Ej: Costco, Hydroquebec...">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Categoría</label>
+      <div class="cats-grid" id="catsGrid"></div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Nota (opcional)</label>
+      <textarea class="form-textarea" id="notaInput" placeholder="Detalle, referencia o recordatorio..."></textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Foto del recibo (opcional)</label>
+      <input type="file" id="receiptInput" accept="image/*" capture="environment" style="display:none" onchange="previewReceipt(this)">
+      <button class="btn-secondary" style="margin-top:0;padding:10px;" onclick="document.getElementById('receiptInput').click()">📷 Agregar foto del recibo</button>
+      <img id="receiptPreview" class="receipt-preview" style="display:none" alt="Vista previa del recibo">
+      <button id="removeReceiptBtn" class="btn-danger" style="display:none;margin-top:6px;padding:8px;font-size:13px;" onclick="removeReceipt()">Quitar foto</button>
+    </div>
+    <button class="btn-primary" id="guardarGastoBtn" onclick="guardarGasto()">Guardar gasto</button>
+    <button class="btn-secondary" onclick="closeModal('agregar')">Cancelar</button>
+  </div>
+</div>
+
+<!-- Modal Salarios -->
+<div class="modal-overlay" id="modal-salarios">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Ingresar salarios</div>
+    <p style="font-size:13px;color:var(--text-muted);margin-bottom:14px;font-weight:600;">Ingresa el salario recibido. Cualquiera puede actualizar ambos campos.</p>
+    <div class="salary-card">
+      <div class="salary-row">
+        <div class="salary-name">William</div>
+        <input class="salary-input" type="number" id="salW" placeholder="0.00" step="0.01" inputmode="decimal">
+      </div>
+      <div class="salary-row">
+        <div class="salary-name">Rosario</div>
+        <input class="salary-input" type="number" id="salR" placeholder="0.00" step="0.01" inputmode="decimal">
+      </div>
+    </div>
+    <button class="btn-primary" onclick="guardarSalarios()">Guardar salarios</button>
+    <button class="btn-secondary" onclick="closeModal('salarios')">Cancelar</button>
+  </div>
+</div>
+
+<!-- Modal Categorías -->
+<div class="modal-overlay" id="modal-categorias">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Gestionar categorías</div>
+    <div id="catsList"></div>
+    <div style="display:flex;gap:8px;margin-top:12px;">
+      <input class="form-input" type="text" id="newCatIcon" placeholder="Emoji" style="width:60px;text-align:center;">
+      <input class="form-input" type="text" id="newCatName" placeholder="Nombre categoría" style="flex:1;">
+    </div>
+    <button class="btn-primary" onclick="agregarCategoria()">+ Agregar categoría</button>
+    <button class="btn-secondary" onclick="closeModal('categorias')">Cerrar</button>
+  </div>
+</div>
+
+<!-- Modal Cerrar Período -->
+<div class="modal-overlay" id="modal-cerrar">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Cuadrar cuentas</div>
+    <p style="font-size:13px;color:var(--text-muted);margin-bottom:14px;font-weight:600;">Esto marca un punto de liquidación. Los gastos pasan al historial y se inicia un nuevo período.</p>
+    <div id="cerrarResumen"></div>
+    <button class="btn-primary" onclick="cerrarPeriodo()">Confirmar y cuadrar</button>
+    <button class="btn-secondary" onclick="closeModal('cerrar')">Cancelar</button>
+  </div>
+</div>
+
+<!-- Modal Agregar/Editar Recurrente -->
+<div class="modal-overlay" id="modal-recurrente">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="modalRecurrenteTitle">Nuevo gasto fijo</div>
+    <div class="form-group">
+      <label class="form-label">¿Quién paga?</label>
+      <div class="who-selector">
+        <button class="who-btn selected-w" id="recWhoW" onclick="selectRecWho('W')">William</button>
+        <button class="who-btn" id="recWhoR" onclick="selectRecWho('R')">Rosario</button>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Monto estimado (CAD $)</label>
+      <input class="form-input" type="number" id="recMontoInput" placeholder="0.00" step="0.01" min="0" inputmode="decimal">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Descripción</label>
+      <input class="form-input" type="text" id="recDescInput" placeholder="Ej: Arriendo, Internet, Seguro...">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Categoría</label>
+      <div class="cats-grid" id="recCatsGrid"></div>
+    </div>
+    <button class="btn-primary" id="guardarRecurrenteBtn" onclick="guardarRecurrente()">Guardar gasto fijo</button>
+    <button class="btn-secondary" onclick="closeModal('recurrente')">Cancelar</button>
+  </div>
+</div>
+
+<!-- Modal Ver Recibo -->
+<div class="modal-overlay" id="modal-recibo">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Foto del recibo</div>
+    <img id="reciboViewer" class="receipt-viewer" src="" alt="Recibo">
+    <button class="btn-secondary" onclick="closeModal('recibo')" style="margin-top:12px;">Cerrar</button>
+  </div>
+</div>
+
+<!-- Modal Recurrentes al nuevo período -->
+<div class="modal-overlay" id="modal-recurrentes-alert">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">¿Agregar gastos fijos?</div>
+    <p style="font-size:13px;color:var(--text-muted);margin-bottom:14px;font-weight:600;">Nuevo período iniciado. Selecciona los gastos fijos que aplican.</p>
+    <div id="recurrentesAlertList"></div>
+    <button class="btn-primary" onclick="agregarRecurrentesSeleccionados()">Agregar seleccionados</button>
+    <button class="btn-secondary" onclick="closeModal('recurrentes-alert')">Omitir por ahora</button>
+  </div>
+</div>
+
+<script>
+let state = {
+  usuario: 'William',
+  salarios: { W: 0, R: 0 },
+  gastos: [],
+  periodos: [],
+  recurrentes: [],
+  categorias: [
+    { icon: '🛒', name: 'Mercado' },
+    { icon: '💡', name: 'Servicios' },
+    { icon: '🍽️', name: 'Restaurante' },
+    { icon: '🏥', name: 'Salud' },
+    { icon: '🚗', name: 'Transporte' },
+    { icon: '🏠', name: 'Hogar' },
+    { icon: '📚', name: 'Educación' },
+    { icon: '🎉', name: 'Ocio' },
+    { icon: '➕', name: 'Otro' }
+  ],
+  selectedCat: null,
+  selectedWho: 'W',
+  selectedRecWho: 'W',
+  selectedRecCat: null,
+  currentTab: 'gastos',
+  lastSyncTs: 0,
+  lastModBy: '',
+  editingGastoId: null,
+  editingPeriodoIdx: null,
+  editingRecurrenteIdx: null,
+  _pendingReceipt: undefined
+};
+
+// ── Sheets config (separate key so reset doesn't erase it) ──────────────────
+function loadSheetsCfg() {
+  try { return JSON.parse(localStorage.getItem('gastosHogar_sheets') || '{}'); } catch(e) { return {}; }
+}
+function saveSheetsCfg(c) { localStorage.setItem('gastosHogar_sheets', JSON.stringify(c)); }
+let sheetsCfg = loadSheetsCfg();
+
+// ── Sync icon ───────────────────────────────────────────────────────────────
+function setSyncIcon(icon, spin, badge) {
+  const el = document.getElementById('syncIcon');
+  if (el) { el.textContent = icon; el.className = spin ? 'spinning' : ''; }
+  const b = document.getElementById('syncBadge');
+  if (b) b.classList.toggle('show', !!badge);
+}
+
+// ── Apps Script communication ───────────────────────────────────────────────
+async function sheetsRequest(action, payload) {
+  if (!sheetsCfg.scriptUrl) return null;
+  setSyncIcon('🔄', true, false);
+  try {
+    const res = await fetch(sheetsCfg.scriptUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({ action, ...payload })
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    setSyncIcon('✅', false, false);
+    setTimeout(() => setSyncIcon('☁️', false, false), 2500);
+    return data;
+  } catch(e) {
+    setSyncIcon(navigator.onLine ? '⚠️' : '📴', false, false);
+    return null;
+  }
+}
+
+async function sheetsSave() {
+  if (!sheetsCfg.scriptUrl) return;
+  const payload = {
+    usuario: state.usuario,
+    salarios: state.salarios,
+    gastos: state.gastos,
+    periodos: state.periodos,
+    recurrentes: state.recurrentes,
+    categorias: state.categorias,
+    lastSyncTs: Date.now(),
+    lastModBy: state.usuario
+  };
+  await sheetsRequest('save', payload);
+}
+
+async function syncFromCloud(silent) {
+  if (!sheetsCfg.scriptUrl) return;
+  const remote = await sheetsRequest('load', {});
+  if (!remote || !remote.lastSyncTs) return;
+  if (remote.lastSyncTs > (state.lastSyncTs || 0)) {
+    const prevMod = state.lastModBy;
+    state = { ...state, ...remote };
+    localStorage.setItem('gastosHogar', JSON.stringify(remote));
+    if (!silent && remote.lastModBy && remote.lastModBy !== state.usuario) {
+      showNotif('📲 ' + remote.lastModBy + ' actualizó los datos', fmtDateTime(remote.lastSyncTs));
+      setSyncIcon('☁️', false, true);
+    }
+    updateHeader();
+    const t = state.currentTab;
+    if (t === 'gastos') renderGastos();
+    else if (t === 'recurrentes') renderRecurrentes();
+    else if (t === 'resumen') renderResumen();
+    else if (t === 'historial') renderHistorial();
+    else if (t === 'config') renderConfig();
+  } else {
+    setSyncIcon('☁️', false, false);
+  }
+}
+
+// ── Local storage ───────────────────────────────────────────────────────────
+function save() {
+  state.lastSyncTs = Date.now();
+  state.lastModBy = state.usuario;
+  const d = {
+    usuario: state.usuario, salarios: state.salarios, gastos: state.gastos,
+    periodos: state.periodos, recurrentes: state.recurrentes, categorias: state.categorias,
+    lastSyncTs: state.lastSyncTs, lastModBy: state.lastModBy
+  };
+  localStorage.setItem('gastosHogar', JSON.stringify(d));
+  sheetsSave();
+}
+function load() {
+  try {
+    const d = localStorage.getItem('gastosHogar');
+    if (d) state = { ...state, ...JSON.parse(d) };
+  } catch(e) {}
+}
+
+// ── Notification ────────────────────────────────────────────────────────────
+let notifTimer;
+function showNotif(msg, sub) {
+  const el = document.getElementById('notifBanner');
+  if (!el) return;
+  document.getElementById('notifText').textContent = msg;
+  document.getElementById('notifSub').textContent = sub || '';
+  el.classList.add('show');
+  clearTimeout(notifTimer);
+  notifTimer = setTimeout(() => el.classList.remove('show'), 6000);
+}
+
+// ── Helpers ─────────────────────────────────────────────────────────────────
+function fmt(n) { return '$' + parseFloat(n || 0).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
+function fmtDate(ts) { return new Date(ts).toLocaleDateString('es-CA', { day: 'numeric', month: 'short' }); }
+function fmtDateTime(ts) { return new Date(ts).toLocaleString('es-CA', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }); }
+
+function getPct() {
+  const t = (state.salarios.W || 0) + (state.salarios.R || 0);
+  if (!t) return { W: 0, R: 0 };
+  return { W: state.salarios.W / t, R: state.salarios.R / t };
+}
+function getTotales() {
+  let pagadoW = 0, pagadoR = 0, total = 0;
+  state.gastos.forEach(g => { total += g.monto; if (g.quien === 'W') pagadoW += g.monto; else pagadoR += g.monto; });
+  const p = getPct();
+  return { pagadoW, pagadoR, total, debeW: total * p.W, debeR: total * p.R, saldoW: pagadoW - total * p.W };
+}
+
+// ── Header ──────────────────────────────────────────────────────────────────
+function updateHeader() {
+  const p = getPct();
+  document.getElementById('pctW').textContent = p.W ? Math.round(p.W * 100) + '%' : '—';
+  document.getElementById('pctR').textContent = p.R ? Math.round(p.R * 100) + '%' : '—';
+  document.getElementById('userBadge').textContent = state.usuario;
+  if (!state.gastos.length || (!state.salarios.W && !state.salarios.R)) {
+    document.getElementById('saldoLabel').textContent = 'Sin gastos aún';
+    document.getElementById('saldoAmount').textContent = '$0.00';
+    document.getElementById('saldoQuien').textContent = 'Registra salarios y gastos';
+    return;
+  }
+  const t = getTotales(), diff = Math.abs(t.saldoW);
+  if (diff < 0.01) {
+    document.getElementById('saldoLabel').textContent = 'Están al día';
+    document.getElementById('saldoAmount').textContent = '$0.00';
+    document.getElementById('saldoQuien').textContent = 'No hay deudas pendientes';
+  } else {
+    document.getElementById('saldoLabel').textContent = t.saldoW > 0 ? 'Rosario le debe a William' : 'William le debe a Rosario';
+    document.getElementById('saldoAmount').textContent = fmt(diff);
+    document.getElementById('saldoQuien').textContent = 'Según porcentaje de salarios';
+  }
+}
+
+// ── Gasto item HTML ─────────────────────────────────────────────────────────
+function gastoItemHtml(g, periodoIdx) {
+  const cat = state.categorias.find(c => c.name === g.categoria) || { icon: '💰', name: 'Otro' };
+  const pi = periodoIdx;
+  const editFn = pi !== null ? `openEditGastoPeriodo(${pi},'${g.id}')` : `openEditGasto('${g.id}')`;
+  const delFn  = pi !== null ? `eliminarGastoPeriodo(${pi},'${g.id}')` : `eliminarGasto('${g.id}')`;
+  return `<div class="gasto-item">
+    <div class="gasto-icon" style="background:${g.quien==='W'?'#eef2ff':'#fdf2f8'}">${cat.icon}</div>
+    <div class="gasto-info">
+      <div class="gasto-desc">${g.desc}</div>
+      <div class="gasto-meta">
+        <span class="who-badge ${g.quien==='W'?'who-w':'who-r'}">${g.quien==='W'?'William':'Rosario'}</span>
+        <span>${cat.name}</span>
+        ${g.recurrente ? '<span class="rec-badge">Fijo</span>' : ''}
+        ${g.receipt ? `<span class="receipt-link" onclick="verRecibo('${g.id}',${pi})">📎 recibo</span>` : ''}
+      </div>
+      ${g.nota ? `<div class="gasto-nota">📝 ${g.nota}</div>` : ''}
+    </div>
+    <div class="gasto-right">
+      <div class="gasto-monto">${fmt(g.monto)}</div>
+      <div class="gasto-date">${fmtDate(g.ts)}</div>
+    </div>
+    <div class="gasto-actions">
+      <button class="gasto-btn" onclick="${editFn}">✏️</button>
+      <button class="gasto-btn" onclick="${delFn}">✕</button>
+    </div>
+  </div>`;
+}
+
+// ── Render Gastos ───────────────────────────────────────────────────────────
+function renderGastos() {
+  const el = document.getElementById('tab-gastos-content');
+  let html = `<div class="notif-banner" id="notifBanner"><div class="notif-text" id="notifText"></div><div class="notif-sub" id="notifSub"></div></div>`;
+  html += `<div class="card salary-card" style="margin-bottom:12px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <div>
+        <div style="font-size:13px;font-weight:700;color:var(--primary);">Salarios del período</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">W: ${state.salarios.W ? fmt(state.salarios.W) : 'pendiente'} · R: ${state.salarios.R ? fmt(state.salarios.R) : 'pendiente'}</div>
+      </div>
+      <button onclick="openModal('salarios')" style="background:var(--primary);color:white;border:none;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif;">Actualizar</button>
+    </div>
+  </div>`;
+  if (!state.gastos.length) {
+    html += `<div class="empty"><div class="empty-icon">🧾</div><div class="empty-text">No hay gastos aún.<br>Toca el + para agregar uno.</div></div>`;
+    el.innerHTML = html; return;
+  }
+  const byDate = {};
+  [...state.gastos].reverse().forEach(g => {
+    const d = new Date(g.ts).toLocaleDateString('es-CA', { weekday: 'long', day: 'numeric', month: 'long' });
+    if (!byDate[d]) byDate[d] = [];
+    byDate[d].push(g);
+  });
+  Object.entries(byDate).forEach(([date, gastos]) => {
+    html += `<div class="card-title" style="padding:0 4px;margin-bottom:6px;margin-top:8px;">${date}</div><div class="card" style="padding:12px 16px;">`;
+    gastos.forEach(g => { html += gastoItemHtml(g, null); });
+    html += '</div>';
+  });
+  el.innerHTML = html;
+}
+
+// ── Render Recurrentes ──────────────────────────────────────────────────────
+function renderRecurrentes() {
+  const el = document.getElementById('tab-recurrentes-content');
+  let html = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+    <div style="font-size:14px;font-weight:800;">Gastos fijos del hogar</div>
+    <button onclick="abrirNuevoRecurrente()" style="background:var(--primary);color:white;border:none;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif;">+ Nuevo</button>
+  </div>`;
+  if (!state.recurrentes.length) {
+    html += `<div class="empty"><div class="empty-icon">🔄</div><div class="empty-text">No hay gastos fijos aún.<br>Agrega arriendo, internet, etc.</div></div>`;
+    el.innerHTML = html; return;
+  }
+  html += `<div class="card" style="padding:12px 16px;">`;
+  state.recurrentes.forEach((r, i) => {
+    const cat = state.categorias.find(c => c.name === r.categoria) || { icon: '💰' };
+    html += `<div class="recurrente-item">
+      <div class="gasto-icon" style="background:${r.quien==='W'?'#eef2ff':'#fdf2f8'}">${cat.icon}</div>
+      <div class="recurrente-info">
+        <div class="recurrente-name">${r.desc}</div>
+        <div class="recurrente-meta">
+          <span class="who-badge ${r.quien==='W'?'who-w':'who-r'}">${r.quien==='W'?'William':'Rosario'}</span>
+          <span>${r.categoria}</span>
+        </div>
+      </div>
+      <div class="recurrente-monto">${fmt(r.monto)}</div>
+      <div class="gasto-actions">
+        <button class="gasto-btn" onclick="openEditRecurrente(${i})">✏️</button>
+        <button class="gasto-btn" onclick="eliminarRecurrente(${i})">✕</button>
+      </div>
+    </div>`;
+  });
+  html += `</div><p style="font-size:12px;color:var(--text-muted);font-weight:600;text-align:center;margin-top:8px;">Al cuadrar cuentas podrás activarlos para el nuevo período.</p>`;
+  el.innerHTML = html;
+}
+
+// ── Render Resumen ──────────────────────────────────────────────────────────
+function renderResumen() {
+  const el = document.getElementById('tab-resumen-content');
+  const t = getTotales(), p = getPct();
+  if (!state.salarios.W && !state.salarios.R) {
+    el.innerHTML = `<div class="empty"><div class="empty-icon">💰</div><div class="empty-text">Primero ingresa los salarios<br>en la pestaña de Gastos.</div></div>`; return;
+  }
+  const cats = {};
+  state.gastos.forEach(g => { cats[g.categoria] = (cats[g.categoria] || 0) + g.monto; });
+  const catHtml = Object.entries(cats).sort((a,b)=>b[1]-a[1]).map(([cat, tot]) => {
+    const c = state.categorias.find(x => x.name === cat) || { icon: '💰' };
+    return `<div class="resumen-row"><div class="resumen-label">${c.icon} ${cat}</div><div class="resumen-val">${fmt(tot)}</div></div>`;
+  }).join('');
+  const diff = Math.abs(t.saldoW), quien = t.saldoW > 0 ? 'Rosario le debe a William' : 'William le debe a Rosario';
+  el.innerHTML = `
+    <div class="card">
+      <div class="card-title">Salarios y porcentajes</div>
+      <div class="resumen-row"><div class="resumen-label">William</div><div style="display:flex;gap:8px;align-items:center;"><span class="tag">${Math.round(p.W*100)}%</span><div class="resumen-val">${fmt(state.salarios.W)}</div></div></div>
+      <div class="resumen-row"><div class="resumen-label">Rosario</div><div style="display:flex;gap:8px;align-items:center;"><span class="tag" style="background:var(--secondary-light);color:var(--secondary);">${Math.round(p.R*100)}%</span><div class="resumen-val">${fmt(state.salarios.R)}</div></div></div>
+      <div class="resumen-row"><div class="resumen-label" style="font-weight:700;">Total ingresos</div><div class="resumen-val">${fmt((state.salarios.W||0)+(state.salarios.R||0))}</div></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Gastos del período</div>
+      <div class="resumen-row"><div class="resumen-label">Total gastado</div><div class="resumen-val">${fmt(t.total)}</div></div>
+      <div class="resumen-row"><div class="resumen-label">William debería pagar</div><div class="resumen-val">${fmt(t.debeW)}</div></div>
+      <div class="resumen-row"><div class="resumen-label">Rosario debería pagar</div><div class="resumen-val">${fmt(t.debeR)}</div></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Lo que cada uno pagó</div>
+      <div class="resumen-row"><div class="resumen-label">William pagó</div><div class="resumen-val">${fmt(t.pagadoW)}</div></div>
+      <div class="resumen-row"><div class="resumen-label">Rosario pagó</div><div class="resumen-val">${fmt(t.pagadoR)}</div></div>
+    </div>
+    ${diff > 0.01 ? `<div class="highlight-box ${t.saldoW>0?'positive':'negative'}"><div class="highlight-label">${quien}</div><div class="highlight-amount">${fmt(diff)}</div></div>` : '<div class="highlight-box positive"><div class="highlight-label">¡Están al día!</div><div class="highlight-amount" style="color:var(--success);">$0.00</div></div>'}
+    ${catHtml ? `<div class="card" style="margin-top:12px;"><div class="card-title">Por categoría</div>${catHtml}</div>` : ''}
+    <button class="btn-primary" style="margin-top:12px;" onclick="openModal('cerrar')">Cuadrar cuentas</button>`;
+}
+
+// ── Render Historial ────────────────────────────────────────────────────────
+function renderHistorial() {
+  const el = document.getElementById('tab-historial-content');
+  if (!state.periodos.length) {
+    el.innerHTML = `<div class="empty"><div class="empty-icon">📅</div><div class="empty-text">No hay períodos cerrados aún.</div></div>`; return;
+  }
+  el.innerHTML = [...state.periodos].reverse().map((p, ri) => {
+    const i = state.periodos.length - 1 - ri;
+    return `<div class="periodo-card">
+      <div class="periodo-header" onclick="togglePeriodo(${i})">
+        <div>
+          <div class="periodo-title">Período ${i + 1}</div>
+          <div class="periodo-fecha">${p.fecha}</div>
+          <div class="periodo-fecha">${p.gastos.length} gastos · W:${Math.round(p.pctW*100)}% R:${Math.round(p.pctR*100)}%</div>
+          <div class="periodo-fecha">Salarios — W: ${fmt(p.salarios.W)} · R: ${fmt(p.salarios.R)}</div>
+        </div>
+        <div style="text-align:right;">
+          <div class="periodo-total">${fmt(p.total)}</div>
+          <div class="periodo-badge">Liquidado</div>
+        </div>
+      </div>
+      ${p.deuda > 0.01 ? `<div style="font-size:12px;font-weight:700;color:var(--text-muted);margin-top:8px;padding-top:8px;border-top:1px solid var(--border);">${p.quien} · ${fmt(p.deuda)}</div>` : ''}
+      <div class="periodo-gastos" id="periodo-gastos-${i}">
+        ${p.gastos.map(g => gastoItemHtml(g, i)).join('')}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function togglePeriodo(i) {
+  const el = document.getElementById('periodo-gastos-' + i);
+  if (el) el.classList.toggle('open');
+}
+
+// ── Render Config ───────────────────────────────────────────────────────────
+function renderConfig() {
+  const el = document.getElementById('tab-config-content');
+  const connected = !!sheetsCfg.scriptUrl;
+  el.innerHTML = `
+    <div class="sync-section">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <div style="font-size:14px;font-weight:800;color:var(--primary);">☁️ Google Sheets</div>
+        <span style="font-size:12px;font-weight:700;color:var(--text-muted);">${connected ? '🟢 Configurado' : '⚪ Sin configurar'}</span>
+      </div>
+      <div class="sync-label">URL del Apps Script</div>
+      <input type="url" class="sync-input" id="cfgScriptUrl" placeholder="https://script.google.com/macros/s/..." value="${sheetsCfg.scriptUrl || ''}">
+      <div style="font-size:11px;color:var(--text-muted);margin-top:4px;font-weight:600;">La URL no cambia ni expira — se configura una sola vez.</div>
+      <button class="btn-primary" style="margin-top:10px;" onclick="guardarSheetsCfg()">Guardar y conectar</button>
+      ${connected ? `<button class="btn-secondary" onclick="syncFromCloud(false)">🔄 Sincronizar ahora</button>` : ''}
+    </div>
+    <div class="card">
+      <div class="card-title">Pasos de configuración</div>
+      <div class="step-box"><span class="step-num">1</span><span class="step-text">Crea una hoja en Google Sheets</span><a class="step-link" href="https://sheets.new" target="_blank">→ sheets.new</a></div>
+      <div class="step-box"><span class="step-num">2</span><span class="step-text">Ve a Extensiones → Apps Script → pega el código del archivo SCRIPT.js</span></div>
+      <div class="step-box"><span class="step-num">3</span><span class="step-text">Implementar → Nueva implementación → Tipo: Aplicación web → Acceso: Cualquier usuario</span></div>
+      <div class="step-box"><span class="step-num">4</span><span class="step-text">Copia la URL generada y pégala arriba. El otro celular solo necesita la misma URL.</span></div>
+      <div style="background:#fef3c7;border-radius:8px;padding:10px 12px;margin-top:4px;font-size:12px;font-weight:700;color:#92400e;">💡 La URL nunca expira ni requiere tokens.</div>
+    </div>
+    <div class="card" style="margin-top:12px;">
+      <div class="card-title">Categorías</div>
+      <div>${state.categorias.map(c => `<div class="cat-manage"><span class="cat-manage-icon">${c.icon}</span><span class="cat-manage-name">${c.name}</span></div>`).join('')}</div>
+      <button class="btn-secondary" style="margin-top:8px;" onclick="openModal('categorias')">Gestionar categorías</button>
+    </div>
+    <div class="card" style="margin-top:12px;">
+      <div class="card-title">Datos</div>
+      <button class="btn-danger" onclick="resetData()">Borrar todos los datos locales</button>
+    </div>`;
+}
+
+// ── Tab navigation ──────────────────────────────────────────────────────────
+function showTab(tab) {
+  ['gastos','recurrentes','resumen','historial','config'].forEach(t => {
+    document.getElementById('tab-'+t+'-content').style.display = t === tab ? 'block' : 'none';
+    document.getElementById('tab-'+t).classList.toggle('active', t === tab);
+  });
+  document.getElementById('fab').style.display = tab === 'gastos' ? 'flex' : 'none';
+  state.currentTab = tab;
+  if (tab === 'gastos') renderGastos();
+  else if (tab === 'recurrentes') renderRecurrentes();
+  else if (tab === 'resumen') renderResumen();
+  else if (tab === 'historial') renderHistorial();
+  else if (tab === 'config') renderConfig();
+  updateHeader();
+}
+
+// ── Modals ──────────────────────────────────────────────────────────────────
+function openModal(id) {
+  if (id === 'agregar') {
+    state.editingGastoId = null; state.editingPeriodoIdx = null;
+    document.getElementById('modalAgregarTitle').textContent = 'Nuevo gasto';
+    document.getElementById('guardarGastoBtn').textContent = 'Guardar gasto';
+    state.selectedWho = state.usuario === 'William' ? 'W' : 'R';
+    state.selectedCat = null;
+    document.getElementById('montoInput').value = '';
+    document.getElementById('descInput').value = '';
+    document.getElementById('notaInput').value = '';
+    document.getElementById('receiptPreview').style.display = 'none';
+    document.getElementById('removeReceiptBtn').style.display = 'none';
+    document.getElementById('receiptInput').value = '';
+    state._pendingReceipt = undefined;
+    updateWhoButtons(); renderCatsGrid('catsGrid', null, 'selectCat');
+  }
+  if (id === 'salarios') {
+    document.getElementById('salW').value = state.salarios.W || '';
+    document.getElementById('salR').value = state.salarios.R || '';
+  }
+  if (id === 'categorias') renderCatsList();
+  if (id === 'cerrar') {
+    const t = getTotales(), diff = Math.abs(t.saldoW);
+    document.getElementById('cerrarResumen').innerHTML = `
+      <div class="highlight-box ${t.saldoW>0?'positive':'negative'}" style="margin-bottom:12px;">
+        <div class="highlight-label">${diff>0.01?(t.saldoW>0?'Rosario le debe a William':'William le debe a Rosario'):'¡Están al día!'}</div>
+        <div class="highlight-amount" style="color:${t.saldoW>0?'var(--success)':'var(--primary)'};">${fmt(diff)}</div>
+      </div>
+      <div class="resumen-row"><div class="resumen-label">Total gastos</div><div class="resumen-val">${fmt(t.total)}</div></div>
+      <div class="resumen-row"><div class="resumen-label">Gastos registrados</div><div class="resumen-val">${state.gastos.length}</div></div>`;
+  }
+  document.getElementById('modal-'+id).classList.add('open');
+}
+function closeModal(id) { document.getElementById('modal-'+id).classList.remove('open'); }
+
+// ── Who selectors ────────────────────────────────────────────────────────────
+function selectWho(w) { state.selectedWho = w; updateWhoButtons(); }
+function updateWhoButtons() {
+  document.getElementById('whoW').className = 'who-btn' + (state.selectedWho==='W'?' selected-w':'');
+  document.getElementById('whoR').className = 'who-btn' + (state.selectedWho==='R'?' selected-r':'');
+}
+function selectRecWho(w) { state.selectedRecWho = w; updateRecWhoButtons(); }
+function updateRecWhoButtons() {
+  document.getElementById('recWhoW').className = 'who-btn' + (state.selectedRecWho==='W'?' selected-w':'');
+  document.getElementById('recWhoR').className = 'who-btn' + (state.selectedRecWho==='R'?' selected-r':'');
+}
+
+// ── Category grids ──────────────────────────────────────────────────────────
+function renderCatsGrid(gridId, selectedCat, onClickFn) {
+  const el = document.getElementById(gridId);
+  if (!el) return;
+  el.innerHTML = state.categorias.map(c =>
+    `<button class="cat-btn ${selectedCat===c.name?'selected':''}" onclick="${onClickFn}('${c.name}')">
+      <span class="cat-icon">${c.icon}</span>${c.name}
+    </button>`).join('');
+}
+function selectCat(n) { state.selectedCat = n; renderCatsGrid('catsGrid', n, 'selectCat'); }
+function selectRecCat(n) { state.selectedRecCat = n; renderCatsGrid('recCatsGrid', n, 'selectRecCat'); }
+
+// ── Receipt ─────────────────────────────────────────────────────────────────
+function previewReceipt(input) {
+  if (!input.files || !input.files[0]) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    state._pendingReceipt = e.target.result;
+    document.getElementById('receiptPreview').src = e.target.result;
+    document.getElementById('receiptPreview').style.display = 'block';
+    document.getElementById('removeReceiptBtn').style.display = 'block';
+  };
+  reader.readAsDataURL(input.files[0]);
+}
+function removeReceipt() {
+  state._pendingReceipt = null;
+  document.getElementById('receiptPreview').style.display = 'none';
+  document.getElementById('removeReceiptBtn').style.display = 'none';
+  document.getElementById('receiptInput').value = '';
+}
+function verRecibo(gastoId, periodoIdx) {
+  const arr = periodoIdx !== null ? (state.periodos[periodoIdx]?.gastos || []) : state.gastos;
+  const g = arr.find(x => x.id === gastoId);
+  if (!g?.receipt) return;
+  document.getElementById('reciboViewer').src = g.receipt;
+  openModal('recibo');
+}
+
+// ── Save / Edit Gasto ───────────────────────────────────────────────────────
+function guardarGasto() {
+  const monto = parseFloat(document.getElementById('montoInput').value);
+  const desc = document.getElementById('descInput').value.trim();
+  const nota = document.getElementById('notaInput').value.trim();
+  if (!monto || monto <= 0) { alert('Ingresa un monto válido'); return; }
+  if (!desc) { alert('Ingresa una descripción'); return; }
+  if (!state.selectedCat) { alert('Selecciona una categoría'); return; }
+
+  const arr = state.editingPeriodoIdx !== null ? state.periodos[state.editingPeriodoIdx].gastos : state.gastos;
+
+  if (state.editingGastoId) {
+    const g = arr.find(x => x.id === state.editingGastoId);
+    if (g) {
+      g.quien = state.selectedWho; g.monto = monto; g.desc = desc;
+      g.categoria = state.selectedCat; g.nota = nota;
+      if (state._pendingReceipt !== undefined) g.receipt = state._pendingReceipt;
+      if (state.editingPeriodoIdx !== null) {
+        state.periodos[state.editingPeriodoIdx].total = arr.reduce((s, x) => s + x.monto, 0);
+      }
+    }
+  } else {
+    state.gastos.push({
+      id: Date.now().toString(), quien: state.selectedWho, monto, desc,
+      categoria: state.selectedCat, nota, ts: Date.now(),
+      receipt: state._pendingReceipt || null, recurrente: false
+    });
+  }
+  save(); closeModal('agregar'); updateHeader();
+  if (state.editingPeriodoIdx !== null) renderHistorial(); else renderGastos();
+  state.editingGastoId = null; state.editingPeriodoIdx = null;
+}
+
+function openEditGasto(id) {
+  const g = state.gastos.find(x => x.id === id); if (!g) return;
+  state.editingGastoId = id; state.editingPeriodoIdx = null;
+  _fillGastoModal(g, 'Editar gasto', 'Guardar cambios');
+}
+function openEditGastoPeriodo(pi, id) {
+  const g = state.periodos[pi]?.gastos.find(x => x.id === id); if (!g) return;
+  state.editingGastoId = id; state.editingPeriodoIdx = pi;
+  _fillGastoModal(g, 'Editar gasto (historial)', 'Guardar cambios');
+}
+function _fillGastoModal(g, title, btnText) {
+  document.getElementById('modalAgregarTitle').textContent = title;
+  document.getElementById('guardarGastoBtn').textContent = btnText;
+  state.selectedWho = g.quien; state.selectedCat = g.categoria;
+  document.getElementById('montoInput').value = g.monto;
+  document.getElementById('descInput').value = g.desc;
+  document.getElementById('notaInput').value = g.nota || '';
+  state._pendingReceipt = undefined;
+  const prev = document.getElementById('receiptPreview');
+  const remBtn = document.getElementById('removeReceiptBtn');
+  if (g.receipt) { prev.src = g.receipt; prev.style.display = 'block'; remBtn.style.display = 'block'; }
+  else { prev.style.display = 'none'; remBtn.style.display = 'none'; }
+  document.getElementById('receiptInput').value = '';
+  updateWhoButtons(); renderCatsGrid('catsGrid', g.categoria, 'selectCat');
+  document.getElementById('modal-agregar').classList.add('open');
+}
+
+function eliminarGasto(id) {
+  if (!confirm('¿Eliminar este gasto?')) return;
+  state.gastos = state.gastos.filter(g => g.id !== id);
+  save(); renderGastos(); updateHeader();
+}
+function eliminarGastoPeriodo(pi, id) {
+  if (!confirm('¿Eliminar este gasto del historial?')) return;
+  state.periodos[pi].gastos = state.periodos[pi].gastos.filter(g => g.id !== id);
+  state.periodos[pi].total = state.periodos[pi].gastos.reduce((s,g) => s+g.monto, 0);
+  save(); renderHistorial();
+}
+
+// ── Salarios ─────────────────────────────────────────────────────────────────
+function guardarSalarios() {
+  const w = parseFloat(document.getElementById('salW').value);
+  const r = parseFloat(document.getElementById('salR').value);
+  if (w > 0) state.salarios.W = w;
+  if (r > 0) state.salarios.R = r;
+  save(); closeModal('salarios'); updateHeader(); renderGastos();
+}
+
+// ── Categorías ───────────────────────────────────────────────────────────────
+function renderCatsList() {
+  const el = document.getElementById('catsList'); if (!el) return;
+  el.innerHTML = state.categorias.map((c, i) =>
+    `<div class="cat-manage"><span class="cat-manage-icon">${c.icon}</span><span class="cat-manage-name">${c.name}</span><span class="cat-manage-del" onclick="eliminarCategoria(${i})">✕</span></div>`
+  ).join('');
+}
+function agregarCategoria() {
+  const icon = document.getElementById('newCatIcon').value.trim();
+  const name = document.getElementById('newCatName').value.trim();
+  if (!icon || !name) { alert('Ingresa un emoji y un nombre'); return; }
+  state.categorias.push({ icon, name });
+  document.getElementById('newCatIcon').value = '';
+  document.getElementById('newCatName').value = '';
+  save(); renderCatsList();
+}
+function eliminarCategoria(i) {
+  if (!confirm('¿Eliminar esta categoría?')) return;
+  state.categorias.splice(i, 1); save(); renderCatsList();
+}
+
+// ── Recurrentes ──────────────────────────────────────────────────────────────
+function abrirNuevoRecurrente() {
+  state.editingRecurrenteIdx = null;
+  state.selectedRecWho = 'W'; state.selectedRecCat = null;
+  document.getElementById('modalRecurrenteTitle').textContent = 'Nuevo gasto fijo';
+  document.getElementById('guardarRecurrenteBtn').textContent = 'Guardar gasto fijo';
+  document.getElementById('recMontoInput').value = '';
+  document.getElementById('recDescInput').value = '';
+  updateRecWhoButtons(); renderCatsGrid('recCatsGrid', null, 'selectRecCat');
+  document.getElementById('modal-recurrente').classList.add('open');
+}
+function guardarRecurrente() {
+  const monto = parseFloat(document.getElementById('recMontoInput').value);
+  const desc = document.getElementById('recDescInput').value.trim();
+  if (!monto || monto <= 0) { alert('Ingresa un monto válido'); return; }
+  if (!desc) { alert('Ingresa una descripción'); return; }
+  if (!state.selectedRecCat) { alert('Selecciona una categoría'); return; }
+  const rec = { id: Date.now().toString(), quien: state.selectedRecWho, monto, desc, categoria: state.selectedRecCat };
+  if (state.editingRecurrenteIdx !== null) state.recurrentes[state.editingRecurrenteIdx] = rec;
+  else state.recurrentes.push(rec);
+  state.editingRecurrenteIdx = null;
+  save(); closeModal('recurrente'); renderRecurrentes();
+}
+function openEditRecurrente(i) {
+  const r = state.recurrentes[i]; if (!r) return;
+  state.editingRecurrenteIdx = i;
+  state.selectedRecWho = r.quien; state.selectedRecCat = r.categoria;
+  document.getElementById('modalRecurrenteTitle').textContent = 'Editar gasto fijo';
+  document.getElementById('guardarRecurrenteBtn').textContent = 'Guardar cambios';
+  document.getElementById('recMontoInput').value = r.monto;
+  document.getElementById('recDescInput').value = r.desc;
+  updateRecWhoButtons(); renderCatsGrid('recCatsGrid', r.categoria, 'selectRecCat');
+  document.getElementById('modal-recurrente').classList.add('open');
+}
+function eliminarRecurrente(i) {
+  if (!confirm('¿Eliminar este gasto fijo?')) return;
+  state.recurrentes.splice(i, 1); save(); renderRecurrentes();
+}
+function mostrarAlertaRecurrentes() {
+  if (!state.recurrentes.length) return;
+  document.getElementById('recurrentesAlertList').innerHTML = state.recurrentes.map((r, i) => {
+    const cat = state.categorias.find(c => c.name === r.categoria) || { icon: '💰' };
+    return `<div class="recurrentes-check">
+      <input type="checkbox" id="rchk-${i}" checked>
+      <label for="rchk-${i}">${cat.icon} ${r.desc} — ${fmt(r.monto)} · ${r.quien==='W'?'William':'Rosario'}</label>
+    </div>`;
+  }).join('');
+  document.getElementById('modal-recurrentes-alert').classList.add('open');
+}
+function agregarRecurrentesSeleccionados() {
+  const now = Date.now();
+  state.recurrentes.forEach((r, i) => {
+    if (document.getElementById('rchk-'+i)?.checked) {
+      state.gastos.push({ id: (now+i).toString(), quien: r.quien, monto: r.monto, desc: r.desc, categoria: r.categoria, nota: '', ts: now, receipt: null, recurrente: true });
+    }
+  });
+  save(); closeModal('recurrentes-alert'); renderGastos(); updateHeader();
+}
+
+// ── Cerrar período ───────────────────────────────────────────────────────────
+function cerrarPeriodo() {
+  const t = getTotales(), p = getPct();
+  state.periodos.push({
+    fecha: new Date().toLocaleDateString('es-CA', { day: 'numeric', month: 'long', year: 'numeric' }),
+    gastos: [...state.gastos], total: t.total,
+    pctW: p.W, pctR: p.R, deuda: Math.abs(t.saldoW),
+    quien: t.saldoW > 0 ? 'Rosario pagó a William' : 'William pagó a Rosario',
+    salarios: { ...state.salarios }
+  });
+  state.gastos = [];
+  state.salarios = { W: 0, R: 0 };
+  save(); closeModal('cerrar');
+  if (state.recurrentes.length) setTimeout(mostrarAlertaRecurrentes, 400);
+  showTab('historial');
+}
+
+// ── Reset ─────────────────────────────────────────────────────────────────────
+function resetData() {
+  if (!confirm('¿Borrar todos los datos locales?')) return;
+  state.gastos = []; state.periodos = []; state.recurrentes = []; state.salarios = { W: 0, R: 0 };
+  save(); showTab('gastos');
+}
+
+// ── User ─────────────────────────────────────────────────────────────────────
+function toggleUser() {
+  state.usuario = state.usuario === 'William' ? 'Rosario' : 'William';
+  save(); updateHeader();
+}
+
+// ── Sheets config UI ─────────────────────────────────────────────────────────
+function guardarSheetsCfg() {
+  const url = document.getElementById('cfgScriptUrl').value.trim();
+  if (!url) { alert('Ingresa la URL del script'); return; }
+  sheetsCfg = { scriptUrl: url }; saveSheetsCfg(sheetsCfg);
+  alert('¡Configurado! Sincronizando...');
+  syncFromCloud(false); renderConfig();
+}
+
+// ── Auto-sync ─────────────────────────────────────────────────────────────────
+let syncInterval;
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) clearInterval(syncInterval);
+  else { syncFromCloud(true); syncInterval = setInterval(() => syncFromCloud(true), 30000); }
+});
+window.addEventListener('online', () => syncFromCloud(false));
+window.addEventListener('offline', () => setSyncIcon('📴', false, false));
+
+// ── Close modals on overlay click ─────────────────────────────────────────────
+document.querySelectorAll('.modal-overlay').forEach(el => {
+  el.addEventListener('click', e => { if (e.target === el) el.classList.remove('open'); });
+});
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+load();
+updateHeader();
+renderGastos();
+if (sheetsCfg.scriptUrl) {
+  setSyncIcon('🔄', true, false);
+  syncFromCloud(true);
+  syncInterval = setInterval(() => syncFromCloud(true), 30000);
+}
+</script>
+</body>
+</html>
