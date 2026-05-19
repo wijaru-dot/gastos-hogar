@@ -1,210 +1,258 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="theme-color" content="#4f46e5">
-    
-    <title>Gastos Hogar</title>
-    
-    <!-- === CONFIGURACIÓN PWA === -->
-    <link rel="manifest" href="manifest.json">
-    
-    <!-- Registrar Service Worker -->
-    <script>
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('service-worker.js')
-                    .then(reg => console.log('✅ Service Worker registrado correctamente'))
-                    .catch(err => console.log('❌ Error Service Worker:', err));
-            });
-        }
-    </script>
-    <!-- ========================== -->
-    
-    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
-<style>
-  :root {
-    --bg: #f0f2f5;
-    --card: #ffffff;
-    --primary: #4f46e5;
-    --primary-light: #eef2ff;
-    --secondary: #ec4899;
-    --secondary-light: #fdf2f8;
-    --text: #1e1b4b;
-    --text-muted: #6b7280;
-    --border: #e5e7eb;
-    --success: #10b981;
-    --warning: #f59e0b;
-    --danger: #dc2626;
-    --radius: 16px;
-    --radius-sm: 10px;
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-  body { font-family: 'Nunito', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; max-width: 430px; margin: 0 auto; position: relative; }
-
-  .header { background: var(--primary); color: white; padding: 20px 20px 28px; position: relative; overflow: hidden; }
-  .header::before { content: ''; position: absolute; top: -40px; right: -40px; width: 150px; height: 150px; background: rgba(255,255,255,0.06); border-radius: 50%; }
-  .header::after { content: ''; position: absolute; bottom: -60px; left: -20px; width: 180px; height: 180px; background: rgba(255,255,255,0.04); border-radius: 50%; }
-  .header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; position: relative; z-index: 1; }
-  .app-title { font-size: 18px; font-weight: 800; }
-  .header-right { display: flex; align-items: center; gap: 10px; }
-  .sync-icon-wrap { position: relative; cursor: pointer; font-size: 18px; line-height: 1; }
-  .sync-badge { position: absolute; top: -3px; right: -3px; width: 8px; height: 8px; background: #f59e0b; border-radius: 50%; border: 1.5px solid var(--primary); display: none; }
-  .sync-badge.show { display: block; }
-  .user-badge { background: rgba(255,255,255,0.2); border-radius: 20px; padding: 6px 14px; font-size: 13px; font-weight: 700; cursor: pointer; }
-  .saldo-box { background: rgba(255,255,255,0.15); border-radius: var(--radius); padding: 16px; position: relative; z-index: 1; }
-  .saldo-label { font-size: 12px; opacity: 0.8; margin-bottom: 4px; }
-  .saldo-amount { font-size: 32px; font-weight: 800; }
-  .saldo-quien { font-size: 12px; opacity: 0.75; margin-top: 4px; }
-  .porcentajes { display: flex; gap: 8px; margin-top: 12px; }
-  .pct-pill { flex: 1; background: rgba(255,255,255,0.15); border-radius: 8px; padding: 6px 10px; }
-  .pct-name { font-size: 11px; opacity: 0.8; }
-  .pct-val { font-size: 16px; font-weight: 800; }
-
-  .nav { display: flex; background: var(--card); border-bottom: 1px solid var(--border); }
-  .nav-btn { flex: 1; padding: 12px 4px; text-align: center; font-size: 11px; font-weight: 700; color: var(--text-muted); border: none; background: none; cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.2s; font-family: 'Nunito', sans-serif; }
-  .nav-btn.active { color: var(--primary); border-bottom-color: var(--primary); }
-
-  .content { padding: 16px; padding-bottom: 100px; }
-  .card { background: var(--card); border-radius: var(--radius); padding: 16px; margin-bottom: 12px; border: 1px solid var(--border); }
-  .card-title { font-size: 13px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; }
-
-  .gasto-item { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); }
-  .gasto-item:last-child { border-bottom: none; padding-bottom: 0; }
-  .gasto-icon { width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 17px; flex-shrink: 0; }
-  .gasto-info { flex: 1; min-width: 0; }
-  .gasto-desc { font-size: 14px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .gasto-meta { font-size: 11px; color: var(--text-muted); margin-top: 2px; display: flex; gap: 5px; align-items: center; flex-wrap: wrap; }
-  .gasto-nota { font-size: 11px; color: var(--text-muted); margin-top: 2px; font-style: italic; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .who-badge { font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px; }
-  .who-w { background: var(--primary-light); color: var(--primary); }
-  .who-r { background: var(--secondary-light); color: var(--secondary); }
-  .rec-badge { font-size: 10px; font-weight: 700; padding: 2px 5px; border-radius: 4px; background: #fef3c7; color: #92400e; }
-  .receipt-link { font-size: 10px; color: var(--primary); font-weight: 700; cursor: pointer; }
-  .gasto-right { text-align: right; flex-shrink: 0; }
-  .gasto-monto { font-size: 14px; font-weight: 800; }
-  .gasto-date { font-size: 10px; color: var(--text-muted); }
-  .gasto-actions { display: flex; gap: 2px; flex-shrink: 0; }
-  .gasto-btn { font-size: 13px; cursor: pointer; color: var(--text-muted); padding: 4px 5px; border: none; background: none; font-family: 'Nunito', sans-serif; line-height: 1; }
-
-  .fab { position: fixed; bottom: 24px; right: 24px; width: 60px; height: 60px; background: var(--primary); color: white; border-radius: 50%; border: none; font-size: 28px; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 20px rgba(79,70,229,0.4); z-index: 100; transition: transform 0.2s; }
-  .fab:active { transform: scale(0.92); }
-
-  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 200; align-items: flex-end; justify-content: center; }
-  .modal-overlay.open { display: flex; }
-  .modal { background: var(--card); border-radius: 24px 24px 0 0; padding: 20px; width: 100%; max-width: 430px; max-height: 92vh; overflow-y: auto; }
-  .modal-handle { width: 40px; height: 4px; background: var(--border); border-radius: 2px; margin: 0 auto 16px; }
-  .modal-title { font-size: 18px; font-weight: 800; margin-bottom: 16px; }
-
-  .form-group { margin-bottom: 14px; }
-  .form-label { font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; display: block; }
-  .form-input { width: 100%; padding: 12px 14px; border: 1.5px solid var(--border); border-radius: var(--radius-sm); font-size: 16px; font-family: 'Nunito', sans-serif; font-weight: 600; background: var(--bg); color: var(--text); outline: none; transition: border-color 0.2s; }
-  .form-input:focus { border-color: var(--primary); }
-  .form-textarea { width: 100%; padding: 10px 14px; border: 1.5px solid var(--border); border-radius: var(--radius-sm); font-size: 14px; font-family: 'Nunito', sans-serif; font-weight: 600; background: var(--bg); color: var(--text); outline: none; resize: none; height: 68px; transition: border-color 0.2s; }
-  .form-textarea:focus { border-color: var(--primary); }
-
-  .who-selector { display: flex; gap: 8px; }
-  .who-btn { flex: 1; padding: 12px; border: 2px solid var(--border); border-radius: var(--radius-sm); font-size: 14px; font-weight: 700; background: var(--bg); cursor: pointer; transition: all 0.2s; font-family: 'Nunito', sans-serif; }
-  .who-btn.selected-w { background: var(--primary-light); border-color: var(--primary); color: var(--primary); }
-  .who-btn.selected-r { background: var(--secondary-light); border-color: var(--secondary); color: var(--secondary); }
-
-  .cats-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
-  .cat-btn { padding: 10px 6px; border: 1.5px solid var(--border); border-radius: var(--radius-sm); font-size: 12px; font-weight: 700; background: var(--bg); cursor: pointer; text-align: center; transition: all 0.2s; font-family: 'Nunito', sans-serif; color: var(--text); }
-  .cat-btn.selected { background: var(--primary-light); border-color: var(--primary); color: var(--primary); }
-  .cat-btn .cat-icon { font-size: 20px; display: block; margin-bottom: 2px; }
-
-  .btn-primary { width: 100%; padding: 14px; background: var(--primary); color: white; border: none; border-radius: var(--radius-sm); font-size: 16px; font-weight: 800; cursor: pointer; font-family: 'Nunito', sans-serif; transition: opacity 0.2s; margin-top: 8px; }
-  .btn-primary:active { opacity: 0.85; }
-  .btn-secondary { width: 100%; padding: 12px; background: var(--bg); color: var(--text); border: 1.5px solid var(--border); border-radius: var(--radius-sm); font-size: 14px; font-weight: 700; cursor: pointer; font-family: 'Nunito', sans-serif; margin-top: 8px; }
-  .btn-danger { width: 100%; padding: 12px; background: #fef2f2; color: var(--danger); border: 1.5px solid #fecaca; border-radius: var(--radius-sm); font-size: 14px; font-weight: 700; cursor: pointer; font-family: 'Nunito', sans-serif; margin-top: 8px; }
-
-  .resumen-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border); }
-  .resumen-row:last-child { border-bottom: none; }
-  .resumen-label { font-size: 14px; color: var(--text-muted); font-weight: 600; }
-  .resumen-val { font-size: 15px; font-weight: 800; }
-  .highlight-box { border-radius: var(--radius-sm); padding: 14px; text-align: center; margin-top: 12px; }
-  .highlight-box.positive { background: #ecfdf5; }
-  .highlight-box.negative { background: var(--primary-light); }
-  .highlight-label { font-size: 12px; font-weight: 700; color: var(--text-muted); }
-  .highlight-amount { font-size: 28px; font-weight: 800; margin-top: 4px; }
-  .highlight-box.positive .highlight-amount { color: var(--success); }
-  .highlight-box.negative .highlight-amount { color: var(--primary); }
-
-  .salary-card { background: var(--primary-light); border-radius: var(--radius); padding: 14px; margin-bottom: 12px; border: 1.5px solid #c7d2fe; }
-  .salary-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
-  .salary-row:last-child { margin-bottom: 0; }
-  .salary-name { font-size: 14px; font-weight: 700; min-width: 80px; }
-  .salary-input { flex: 1; padding: 8px 12px; border: 1.5px solid #c7d2fe; border-radius: 8px; font-size: 14px; font-weight: 700; font-family: 'Nunito', sans-serif; background: white; color: var(--text); outline: none; }
-  .salary-input:focus { border-color: var(--primary); }
-
-  .periodo-card { background: var(--card); border-radius: var(--radius); padding: 14px; margin-bottom: 10px; border: 1px solid var(--border); }
-  .periodo-header { display: flex; justify-content: space-between; align-items: flex-start; cursor: pointer; }
-  .periodo-title { font-size: 14px; font-weight: 800; }
-  .periodo-fecha { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
-  .periodo-total { font-size: 16px; font-weight: 800; color: var(--primary); }
-  .periodo-badge { font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 4px; background: #dcfce7; color: #16a34a; margin-top: 4px; display: inline-block; }
-  .periodo-gastos { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); display: none; }
-  .periodo-gastos.open { display: block; }
-
-  .empty { text-align: center; padding: 40px 20px; color: var(--text-muted); }
-  .empty-icon { font-size: 48px; margin-bottom: 12px; }
-  .empty-text { font-size: 14px; font-weight: 600; }
-
-  .cat-manage { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
-  .cat-manage-icon { font-size: 20px; width: 36px; text-align: center; }
-  .cat-manage-name { flex: 1; font-size: 14px; font-weight: 700; }
-  .cat-manage-del { color: var(--danger); font-size: 18px; cursor: pointer; padding: 4px; }
-
-  .tag { display: inline-block; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 4px; background: var(--primary-light); color: var(--primary); }
-
-  .recurrente-item { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); }
-  .recurrente-item:last-child { border-bottom: none; }
-  .recurrente-info { flex: 1; min-width: 0; }
-  .recurrente-name { font-size: 14px; font-weight: 700; }
-  .recurrente-meta { font-size: 11px; color: var(--text-muted); margin-top: 2px; display: flex; gap: 5px; align-items: center; }
-  .recurrente-monto { font-size: 14px; font-weight: 800; color: var(--primary); flex-shrink: 0; }
-
-  .notif-banner { background: #fef3c7; border: 1.5px solid #fcd34d; border-radius: var(--radius-sm); padding: 10px 14px; margin-bottom: 12px; display: none; }
-  .notif-banner.show { display: block; }
-  .notif-text { font-size: 13px; font-weight: 700; color: #92400e; }
-  .notif-sub { font-size: 11px; color: #b45309; margin-top: 2px; font-weight: 600; }
-
-  .sync-section { background: var(--primary-light); border-radius: var(--radius); padding: 16px; margin-bottom: 12px; border: 1.5px solid #c7d2fe; }
-  .sync-input { width: 100%; padding: 10px 12px; border: 1.5px solid #c7d2fe; border-radius: 8px; font-size: 13px; font-family: 'Nunito', sans-serif; font-weight: 600; background: white; color: var(--text); outline: none; margin-top: 6px; }
-  .sync-input:focus { border-color: var(--primary); }
-  .sync-label { font-size: 12px; font-weight: 700; color: var(--primary); text-transform: uppercase; letter-spacing: 0.5px; }
-  .step-box { background: white; border-radius: 10px; padding: 12px 14px; margin-bottom: 8px; border: 1px solid #c7d2fe; }
-  .step-num { display: inline-block; background: var(--primary); color: white; font-size: 11px; font-weight: 800; width: 20px; height: 20px; border-radius: 50%; text-align: center; line-height: 20px; margin-right: 6px; }
-  .step-text { font-size: 13px; font-weight: 600; color: var(--text); }
-  .step-link { color: var(--primary); font-size: 12px; font-weight: 700; display: block; margin-top: 4px; word-break: break-all; }
-
-  .receipt-preview { width: 100%; max-height: 160px; object-fit: cover; border-radius: var(--radius-sm); margin-top: 8px; border: 1px solid var(--border); }
-  .receipt-viewer { width: 100%; max-height: 65vh; object-fit: contain; border-radius: var(--radius-sm); }
-
-  .recurrentes-check { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border); }
-  .recurrentes-check:last-of-type { border-bottom: none; }
-  .recurrentes-check label { flex: 1; font-size: 13px; font-weight: 700; color: var(--text); cursor: pointer; }
-  .recurrentes-check input[type=checkbox] { width: 18px; height: 18px; accent-color: var(--primary); flex-shrink: 0; }
-
-  @keyframes spin { to { transform: rotate(360deg); } }
-  .spinning { display: inline-block; animation: spin 1s linear infinite; }
-</style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#4f46e5">
+<title>Gastos Hogar</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f0f2f5;--card:#fff;--primary:#4f46e5;--primary-light:#eef2ff;--secondary:#ec4899;--secondary-light:#fdf2f8;--text:#1e1b4b;--text-muted:#6b7280;--border:#e5e7eb;--success:#10b981;--warning:#f59e0b;--danger:#dc2626;--radius:16px;--radius-sm:10px;}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;max-width:430px;margin:0 auto;}
+/* Access screen */
+.access-screen{display:none;position:fixed;inset:0;background:var(--primary);z-index:600;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px;}
+.access-screen.open{display:flex;}
+.access-logo{font-size:56px;margin-bottom:16px;}
+.access-title{font-size:26px;font-weight:800;color:white;margin-bottom:8px;}
+.access-sub{font-size:14px;color:rgba(255,255,255,0.8);font-weight:600;margin-bottom:32px;text-align:center;}
+.access-input{width:100%;padding:16px;border:2px solid rgba(255,255,255,0.3);border-radius:var(--radius-sm);font-size:18px;font-family:'Nunito',sans-serif;font-weight:700;background:rgba(255,255,255,0.15);color:white;outline:none;text-align:center;letter-spacing:3px;}
+.access-input::placeholder{color:rgba(255,255,255,0.4);letter-spacing:1px;}
+.access-input:focus{border-color:white;}
+.access-btn{width:100%;padding:16px;background:white;color:var(--primary);border:none;border-radius:var(--radius-sm);font-size:16px;font-weight:800;cursor:pointer;font-family:'Nunito',sans-serif;margin-top:12px;}
+.access-error{color:#fca5a5;font-size:13px;font-weight:700;margin-top:8px;text-align:center;display:none;}
+.access-error.show{display:block;}
+/* Onboarding */
+.ob-overlay{display:none;position:fixed;inset:0;background:var(--primary);z-index:500;flex-direction:column;align-items:center;justify-content:center;padding:24px;}
+.ob-overlay.open{display:flex;}
+.ob-wrap{width:100%;max-width:380px;max-height:90vh;overflow-y:auto;}
+.ob-dots{display:flex;gap:6px;justify-content:center;margin-bottom:20px;}
+.ob-dot{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,0.3);}
+.ob-dot.active{background:white;}
+.ob-emoji{font-size:48px;text-align:center;margin-bottom:12px;}
+.ob-title{font-size:22px;font-weight:800;color:white;text-align:center;margin-bottom:6px;}
+.ob-sub{font-size:13px;color:rgba(255,255,255,0.8);text-align:center;margin-bottom:20px;font-weight:600;line-height:1.5;}
+.ob-card{background:rgba(255,255,255,0.15);border-radius:var(--radius);padding:16px;margin-bottom:12px;}
+.ob-label{font-size:11px;font-weight:700;color:rgba(255,255,255,0.7);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:5px;display:block;}
+.ob-input{width:100%;padding:11px 14px;border:2px solid rgba(255,255,255,0.3);border-radius:var(--radius-sm);font-size:15px;font-family:'Nunito',sans-serif;font-weight:700;background:rgba(255,255,255,0.15);color:white;outline:none;}
+.ob-input::placeholder{color:rgba(255,255,255,0.4);}
+.ob-input:focus{border-color:rgba(255,255,255,0.8);}
+.ob-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin-top:6px;}
+.ob-chip{padding:9px 5px;border:2px solid rgba(255,255,255,0.3);border-radius:var(--radius-sm);font-size:12px;font-weight:700;background:transparent;cursor:pointer;text-align:center;color:white;font-family:'Nunito',sans-serif;}
+.ob-chip.sel{background:white;color:var(--primary);border-color:white;}
+.ob-method{display:flex;gap:8px;margin-top:6px;}
+.ob-meth-btn{flex:1;padding:12px 6px;border:2px solid rgba(255,255,255,0.3);border-radius:var(--radius-sm);font-size:12px;font-weight:700;background:transparent;cursor:pointer;text-align:center;color:white;font-family:'Nunito',sans-serif;}
+.ob-meth-btn.sel{background:white;color:var(--primary);border-color:white;}
+.ob-meth-icon{font-size:20px;display:block;margin-bottom:3px;}
+.ob-step-box{background:rgba(255,255,255,0.12);border-radius:10px;padding:11px 13px;margin-bottom:8px;}
+.ob-step-box a{color:white;font-weight:800;font-size:12px;}
+.ob-step-num{display:inline-block;background:white;color:var(--primary);font-size:10px;font-weight:800;width:18px;height:18px;border-radius:50%;text-align:center;line-height:18px;margin-right:5px;}
+.ob-step-text{font-size:12px;font-weight:600;color:white;}
+.ob-code-box{background:rgba(0,0,0,0.25);border-radius:8px;padding:10px 12px;font-size:10px;color:rgba(255,255,255,0.8);font-family:monospace;max-height:80px;overflow:hidden;margin-top:6px;word-break:break-all;}
+.ob-copy-btn{width:100%;padding:9px;background:rgba(255,255,255,0.2);color:white;border:1px solid rgba(255,255,255,0.3);border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif;margin-top:5px;}
+.ob-btn{width:100%;padding:14px;background:white;color:var(--primary);border:none;border-radius:var(--radius-sm);font-size:15px;font-weight:800;cursor:pointer;font-family:'Nunito',sans-serif;margin-top:8px;}
+.ob-skip{width:100%;padding:10px;background:transparent;color:rgba(255,255,255,0.65);border:none;font-size:13px;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif;margin-top:4px;}
+/* Header */
+.header{background:var(--primary);color:white;padding:20px 20px 28px;position:relative;overflow:hidden;}
+.header::before{content:'';position:absolute;top:-40px;right:-40px;width:150px;height:150px;background:rgba(255,255,255,0.06);border-radius:50%;}
+.header::after{content:'';position:absolute;bottom:-60px;left:-20px;width:180px;height:180px;background:rgba(255,255,255,0.04);border-radius:50%;}
+.header-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;position:relative;z-index:1;}
+.app-title{font-size:18px;font-weight:800;}
+.header-right{display:flex;align-items:center;gap:8px;}
+.eye-btn{background:rgba(255,255,255,0.15);border:none;color:white;border-radius:50%;width:32px;height:32px;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.sync-icon-wrap{position:relative;cursor:pointer;font-size:18px;line-height:1;}
+.sync-badge{position:absolute;top:-3px;right:-3px;width:8px;height:8px;background:#f59e0b;border-radius:50%;border:1.5px solid var(--primary);display:none;}
+.sync-badge.show{display:block;}
+.user-badge{background:rgba(255,255,255,0.2);border-radius:20px;padding:6px 14px;font-size:13px;font-weight:700;cursor:pointer;}
+.saldo-box{background:rgba(255,255,255,0.15);border-radius:var(--radius);padding:16px;position:relative;z-index:1;}
+.saldo-label{font-size:12px;opacity:0.8;margin-bottom:4px;}
+.saldo-amount{font-size:32px;font-weight:800;}
+.saldo-quien{font-size:12px;opacity:0.75;margin-top:4px;}
+.porcentajes{display:flex;gap:8px;margin-top:12px;}
+.pct-pill{flex:1;background:rgba(255,255,255,0.15);border-radius:8px;padding:6px 10px;}
+.pct-name{font-size:11px;opacity:0.8;}
+.pct-val{font-size:16px;font-weight:800;}
+/* Nav */
+.nav{display:flex;background:var(--card);border-bottom:1px solid var(--border);}
+.nav-btn{flex:1;padding:12px 4px;text-align:center;font-size:11px;font-weight:700;color:var(--text-muted);border:none;background:none;cursor:pointer;border-bottom:2px solid transparent;transition:all 0.2s;font-family:'Nunito',sans-serif;}
+.nav-btn.active{color:var(--primary);border-bottom-color:var(--primary);}
+/* Content */
+.content{padding:16px;padding-bottom:100px;}
+.card{background:var(--card);border-radius:var(--radius);padding:16px;margin-bottom:12px;border:1px solid var(--border);}
+.card-title{font-size:13px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:12px;}
+/* Gasto */
+.gasto-item{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);}
+.gasto-item:last-child{border-bottom:none;padding-bottom:0;}
+.gasto-icon{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;}
+.gasto-info{flex:1;min-width:0;}
+.gasto-desc{font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.gasto-meta{font-size:11px;color:var(--text-muted);margin-top:2px;display:flex;gap:5px;align-items:center;flex-wrap:wrap;}
+.gasto-nota{font-size:11px;color:var(--text-muted);margin-top:2px;font-style:italic;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.who-badge{font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;}
+.who-w{background:var(--primary-light);color:var(--primary);}
+.who-r{background:var(--secondary-light);color:var(--secondary);}
+.rec-badge{font-size:10px;font-weight:700;padding:2px 5px;border-radius:4px;background:#fef3c7;color:#92400e;}
+.asumido-badge{font-size:10px;font-weight:700;padding:2px 5px;border-radius:4px;background:#ecfdf5;color:#065f46;}
+.receipt-link{font-size:10px;color:var(--primary);font-weight:700;cursor:pointer;}
+.gasto-right{text-align:right;flex-shrink:0;}
+.gasto-monto{font-size:14px;font-weight:800;}
+.gasto-date{font-size:10px;color:var(--text-muted);}
+.gasto-actions{display:flex;gap:2px;flex-shrink:0;}
+.gasto-btn{font-size:13px;cursor:pointer;color:var(--text-muted);padding:4px 5px;border:none;background:none;font-family:'Nunito',sans-serif;line-height:1;}
+/* FAB */
+.fab{position:fixed;bottom:24px;right:24px;width:60px;height:60px;background:var(--primary);color:white;border-radius:50%;border:none;font-size:28px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(79,70,229,0.4);z-index:100;transition:transform 0.2s;}
+.fab:active{transform:scale(0.92);}
+/* Modal */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:200;align-items:flex-end;justify-content:center;}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--card);border-radius:24px 24px 0 0;padding:20px;width:100%;max-width:430px;max-height:92vh;overflow-y:auto;}
+.modal-handle{width:40px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 16px;}
+.modal-title{font-size:18px;font-weight:800;margin-bottom:16px;}
+/* Form */
+.form-group{margin-bottom:14px;}
+.form-label{font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;display:block;}
+.form-input{width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:16px;font-family:'Nunito',sans-serif;font-weight:600;background:var(--bg);color:var(--text);outline:none;transition:border-color 0.2s;}
+.form-input:focus{border-color:var(--primary);}
+.form-input-sm{padding:8px 12px;font-size:14px;}
+.form-textarea{width:100%;padding:10px 14px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:14px;font-family:'Nunito',sans-serif;font-weight:600;background:var(--bg);color:var(--text);outline:none;resize:none;height:68px;transition:border-color 0.2s;}
+.form-textarea:focus{border-color:var(--primary);}
+/* Who */
+.who-selector{display:flex;gap:8px;}
+.who-btn{flex:1;padding:12px;border:2px solid var(--border);border-radius:var(--radius-sm);font-size:14px;font-weight:700;background:var(--bg);cursor:pointer;transition:all 0.2s;font-family:'Nunito',sans-serif;}
+.who-btn.selected-w{background:var(--primary-light);border-color:var(--primary);color:var(--primary);}
+.who-btn.selected-r{background:var(--secondary-light);border-color:var(--secondary);color:var(--secondary);}
+/* Cats */
+.cats-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
+.cat-btn{padding:10px 6px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:12px;font-weight:700;background:var(--bg);cursor:pointer;text-align:center;transition:all 0.2s;font-family:'Nunito',sans-serif;color:var(--text);}
+.cat-btn.selected{background:var(--primary-light);border-color:var(--primary);color:var(--primary);}
+.cat-btn .cat-icon{font-size:20px;display:block;margin-bottom:2px;}
+/* Buttons */
+.btn-primary{width:100%;padding:14px;background:var(--primary);color:white;border:none;border-radius:var(--radius-sm);font-size:16px;font-weight:800;cursor:pointer;font-family:'Nunito',sans-serif;transition:opacity 0.2s;margin-top:8px;}
+.btn-primary:active{opacity:0.85;}
+.btn-secondary{width:100%;padding:12px;background:var(--bg);color:var(--text);border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:14px;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif;margin-top:8px;}
+.btn-danger{width:100%;padding:12px;background:#fef2f2;color:var(--danger);border:1.5px solid #fecaca;border-radius:var(--radius-sm);font-size:14px;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif;margin-top:8px;}
+/* Toggle asumido */
+.toggle-row{display:flex;align-items:center;justify-content:space-between;background:#fef3c7;border:1.5px solid #fcd34d;border-radius:var(--radius-sm);padding:12px 14px;}
+.toggle-row.active{background:#ecfdf5;border-color:#6ee7b7;}
+.toggle-label{font-size:13px;font-weight:700;color:#92400e;}
+.toggle-row.active .toggle-label{color:#065f46;}
+.toggle-sub{font-size:11px;font-weight:600;color:#b45309;margin-top:2px;}
+.toggle-row.active .toggle-sub{color:#059669;}
+.toggle-switch{position:relative;width:44px;height:24px;flex-shrink:0;}
+.toggle-switch input{opacity:0;width:0;height:0;}
+.toggle-slider{position:absolute;inset:0;background:#d1d5db;border-radius:24px;cursor:pointer;transition:0.2s;}
+.toggle-slider:before{content:'';position:absolute;width:18px;height:18px;left:3px;top:3px;background:white;border-radius:50%;transition:0.2s;}
+input:checked+.toggle-slider{background:#10b981;}
+input:checked+.toggle-slider:before{transform:translateX(20px);}
+/* Method selector */
+.method-selector{display:flex;gap:8px;}
+.method-btn{flex:1;padding:10px 6px;border:2px solid var(--border);border-radius:var(--radius-sm);font-size:13px;font-weight:700;background:var(--bg);cursor:pointer;text-align:center;transition:all 0.2s;font-family:'Nunito',sans-serif;color:var(--text);}
+.method-btn.selected{background:var(--primary-light);border-color:var(--primary);color:var(--primary);}
+.method-icon{font-size:20px;display:block;margin-bottom:3px;}
+/* Resumen */
+.resumen-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);}
+.resumen-row:last-child{border-bottom:none;}
+.resumen-label{font-size:14px;color:var(--text-muted);font-weight:600;}
+.resumen-val{font-size:15px;font-weight:800;}
+.highlight-box{border-radius:var(--radius-sm);padding:14px;text-align:center;margin-top:12px;}
+.highlight-box.positive{background:#ecfdf5;}
+.highlight-box.negative{background:var(--primary-light);}
+.highlight-label{font-size:12px;font-weight:700;color:var(--text-muted);}
+.highlight-amount{font-size:28px;font-weight:800;margin-top:4px;}
+.highlight-box.positive .highlight-amount{color:var(--success);}
+.highlight-box.negative .highlight-amount{color:var(--primary);}
+/* Salary */
+.salary-card{background:var(--primary-light);border-radius:var(--radius);padding:14px;margin-bottom:12px;border:1.5px solid #c7d2fe;}
+.salary-row{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+.salary-row:last-child{margin-bottom:0;}
+.salary-name{font-size:14px;font-weight:700;min-width:80px;}
+.salary-input{flex:1;padding:8px 12px;border:1.5px solid #c7d2fe;border-radius:8px;font-size:14px;font-weight:700;font-family:'Nunito',sans-serif;background:white;color:var(--text);outline:none;}
+.salary-input:focus{border-color:var(--primary);}
+/* Historial */
+.periodo-card{background:var(--card);border-radius:var(--radius);padding:14px;margin-bottom:10px;border:1px solid var(--border);}
+.periodo-header{display:flex;justify-content:space-between;align-items:flex-start;cursor:pointer;}
+.periodo-title{font-size:14px;font-weight:800;}
+.periodo-fecha{font-size:11px;color:var(--text-muted);margin-top:2px;}
+.periodo-total{font-size:16px;font-weight:800;color:var(--primary);}
+.periodo-badge{font-size:10px;font-weight:700;padding:3px 8px;border-radius:4px;background:#dcfce7;color:#16a34a;margin-top:4px;display:inline-block;}
+.periodo-gastos{margin-top:10px;padding-top:10px;border-top:1px solid var(--border);display:none;}
+.periodo-gastos.open{display:block;}
+/* Empty */
+.empty{text-align:center;padding:40px 20px;color:var(--text-muted);}
+.empty-icon{font-size:48px;margin-bottom:12px;}
+.empty-text{font-size:14px;font-weight:600;}
+/* Cat manage */
+.cat-manage{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+.cat-manage-icon{font-size:20px;width:36px;text-align:center;}
+.cat-manage-name{flex:1;font-size:14px;font-weight:700;}
+.cat-manage-del{color:var(--danger);font-size:18px;cursor:pointer;padding:4px;}
+.tag{display:inline-block;font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;background:var(--primary-light);color:var(--primary);}
+/* Recurrentes */
+.recurrente-item{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);}
+.recurrente-item:last-child{border-bottom:none;}
+.recurrente-info{flex:1;min-width:0;}
+.recurrente-name{font-size:14px;font-weight:700;}
+.recurrente-meta{font-size:11px;color:var(--text-muted);margin-top:2px;display:flex;gap:5px;align-items:center;}
+.recurrente-monto{font-size:14px;font-weight:800;color:var(--primary);flex-shrink:0;}
+/* Notif */
+.notif-banner{background:#fef3c7;border:1.5px solid #fcd34d;border-radius:var(--radius-sm);padding:10px 14px;margin-bottom:12px;display:none;}
+.notif-banner.show{display:block;}
+.notif-text{font-size:13px;font-weight:700;color:#92400e;}
+.notif-sub{font-size:11px;color:#b45309;margin-top:2px;font-weight:600;}
+/* Sync */
+.sync-section{background:var(--primary-light);border-radius:var(--radius);padding:16px;margin-bottom:12px;border:1.5px solid #c7d2fe;}
+.sync-input{width:100%;padding:10px 12px;border:1.5px solid #c7d2fe;border-radius:8px;font-size:13px;font-family:'Nunito',sans-serif;font-weight:600;background:white;color:var(--text);outline:none;margin-top:6px;}
+.sync-input:focus{border-color:var(--primary);}
+.sync-label{font-size:12px;font-weight:700;color:var(--primary);text-transform:uppercase;letter-spacing:0.5px;}
+.step-box{background:white;border-radius:10px;padding:12px 14px;margin-bottom:8px;border:1px solid #c7d2fe;}
+.step-num{display:inline-block;background:var(--primary);color:white;font-size:11px;font-weight:800;width:20px;height:20px;border-radius:50%;text-align:center;line-height:20px;margin-right:6px;}
+.step-text{font-size:13px;font-weight:600;color:var(--text);}
+.step-link{color:var(--primary);font-size:12px;font-weight:700;display:block;margin-top:4px;word-break:break-all;}
+/* Receipt */
+.receipt-preview{width:100%;max-height:160px;object-fit:cover;border-radius:var(--radius-sm);margin-top:8px;border:1px solid var(--border);}
+.receipt-viewer{width:100%;max-height:65vh;object-fit:contain;border-radius:var(--radius-sm);}
+/* Recurrentes check */
+.recurrentes-check{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);}
+.recurrentes-check:last-of-type{border-bottom:none;}
+.recurrentes-check label{flex:1;font-size:13px;font-weight:700;color:var(--text);cursor:pointer;}
+.recurrentes-check input[type=checkbox]{width:18px;height:18px;accent-color:var(--primary);flex-shrink:0;}
+/* Config */
+.config-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.config-label{font-size:13px;font-weight:700;min-width:85px;color:var(--text-muted);}
+@keyframes spin{to{transform:rotate(360deg);}}
+.spinning{display:inline-block;animation:spin 1s linear infinite;}
+</style>
 </head>
 <body>
 
+<!-- Access Screen -->
+<div class="access-screen" id="accessScreen">
+  <div class="access-logo">🏠</div>
+  <div class="access-title">Gastos Hogar</div>
+  <div class="access-sub">Ingresa tu código de acceso</div>
+  <input class="access-input" type="text" id="accessInput" placeholder="• • • • • •" autocomplete="off" autocorrect="off" autocapitalize="characters">
+  <div class="access-error" id="accessError">Código incorrecto. Inténtalo de nuevo.</div>
+  <button class="access-btn" onclick="verificarAcceso()">Entrar</button>
+</div>
+
+<!-- Onboarding -->
+<div class="ob-overlay" id="obOverlay">
+  <div class="ob-wrap" id="obContent"></div>
+</div>
+
+<!-- Header -->
 <div class="header">
   <div class="header-top">
-    <div class="app-title">🏠 Gastos Hogar</div>
+    <div class="app-title" id="appTitleEl">🏠 Gastos Hogar</div>
     <div class="header-right">
+      <button class="eye-btn" onclick="toggleSalarios()" id="eyeBtn" title="Ocultar/mostrar salarios">👁</button>
       <div class="sync-icon-wrap" onclick="showTab('config')" title="Sincronización">
         <span id="syncIcon">☁️</span>
         <div class="sync-badge" id="syncBadge"></div>
       </div>
-      <div class="user-badge" onclick="toggleUser()" id="userBadge">William</div>
+      <div class="user-badge" onclick="toggleUser()" id="userBadge">—</div>
     </div>
   </div>
   <div class="saldo-box">
@@ -213,11 +261,12 @@
     <div class="saldo-quien" id="saldoQuien"></div>
   </div>
   <div class="porcentajes">
-    <div class="pct-pill"><div class="pct-name">William</div><div class="pct-val" id="pctW">—</div></div>
-    <div class="pct-pill"><div class="pct-name">Rosario</div><div class="pct-val" id="pctR">—</div></div>
+    <div class="pct-pill"><div class="pct-name" id="pctNameW">—</div><div class="pct-val" id="pctW">—</div></div>
+    <div class="pct-pill"><div class="pct-name" id="pctNameR">—</div><div class="pct-val" id="pctR">—</div></div>
   </div>
 </div>
 
+<!-- Nav -->
 <div class="nav">
   <button class="nav-btn active" onclick="showTab('gastos')" id="tab-gastos">Gastos</button>
   <button class="nav-btn" onclick="showTab('recurrentes')" id="tab-recurrentes">Fijos</button>
@@ -244,12 +293,12 @@
     <div class="form-group">
       <label class="form-label">¿Quién paga?</label>
       <div class="who-selector">
-        <button class="who-btn selected-w" id="whoW" onclick="selectWho('W')">William</button>
-        <button class="who-btn" id="whoR" onclick="selectWho('R')">Rosario</button>
+        <button class="who-btn selected-w" id="whoW" onclick="selectWho('W')">—</button>
+        <button class="who-btn" id="whoR" onclick="selectWho('R')">—</button>
       </div>
     </div>
     <div class="form-group">
-      <label class="form-label">Monto (CAD $)</label>
+      <label class="form-label" id="montoLabel">Monto</label>
       <input class="form-input" type="number" id="montoInput" placeholder="0.00" step="0.01" min="0" inputmode="decimal">
     </div>
     <div class="form-group">
@@ -271,6 +320,18 @@
       <img id="receiptPreview" class="receipt-preview" style="display:none" alt="Vista previa del recibo">
       <button id="removeReceiptBtn" class="btn-danger" style="display:none;margin-top:6px;padding:8px;font-size:13px;" onclick="removeReceipt()">Quitar foto</button>
     </div>
+    <div class="form-group">
+      <div class="toggle-row" id="asumidoToggleRow">
+        <div>
+          <div class="toggle-label">Asumo este gasto completo</div>
+          <div class="toggle-sub" id="asumidoSub">Se descuenta directo del saldo final</div>
+        </div>
+        <label class="toggle-switch">
+          <input type="checkbox" id="asumidoCheck" onchange="toggleAsumido()">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+    </div>
     <button class="btn-primary" id="guardarGastoBtn" onclick="guardarGasto()">Guardar gasto</button>
     <button class="btn-secondary" onclick="closeModal('agregar')">Cancelar</button>
   </div>
@@ -280,15 +341,15 @@
 <div class="modal-overlay" id="modal-salarios">
   <div class="modal">
     <div class="modal-handle"></div>
-    <div class="modal-title">Ingresar salarios</div>
+    <div class="modal-title">Actualizar salarios</div>
     <p style="font-size:13px;color:var(--text-muted);margin-bottom:14px;font-weight:600;">Ingresa el salario recibido. Cualquiera puede actualizar ambos campos.</p>
     <div class="salary-card">
       <div class="salary-row">
-        <div class="salary-name">William</div>
+        <div class="salary-name" id="salLabelW">—</div>
         <input class="salary-input" type="number" id="salW" placeholder="0.00" step="0.01" inputmode="decimal">
       </div>
       <div class="salary-row">
-        <div class="salary-name">Rosario</div>
+        <div class="salary-name" id="salLabelR">—</div>
         <input class="salary-input" type="number" id="salR" placeholder="0.00" step="0.01" inputmode="decimal">
       </div>
     </div>
@@ -324,7 +385,7 @@
   </div>
 </div>
 
-<!-- Modal Agregar/Editar Recurrente -->
+<!-- Modal Recurrente -->
 <div class="modal-overlay" id="modal-recurrente">
   <div class="modal">
     <div class="modal-handle"></div>
@@ -332,12 +393,12 @@
     <div class="form-group">
       <label class="form-label">¿Quién paga?</label>
       <div class="who-selector">
-        <button class="who-btn selected-w" id="recWhoW" onclick="selectRecWho('W')">William</button>
-        <button class="who-btn" id="recWhoR" onclick="selectRecWho('R')">Rosario</button>
+        <button class="who-btn selected-w" id="recWhoW" onclick="selectRecWho('W')">—</button>
+        <button class="who-btn" id="recWhoR" onclick="selectRecWho('R')">—</button>
       </div>
     </div>
     <div class="form-group">
-      <label class="form-label">Monto estimado (CAD $)</label>
+      <label class="form-label" id="recMontoLabel">Monto estimado</label>
       <input class="form-input" type="number" id="recMontoInput" placeholder="0.00" step="0.01" min="0" inputmode="decimal">
     </div>
     <div class="form-group">
@@ -353,7 +414,7 @@
   </div>
 </div>
 
-<!-- Modal Ver Recibo -->
+<!-- Modal Recibo -->
 <div class="modal-overlay" id="modal-recibo">
   <div class="modal">
     <div class="modal-handle"></div>
@@ -363,7 +424,7 @@
   </div>
 </div>
 
-<!-- Modal Recurrentes al nuevo período -->
+<!-- Modal Recurrentes alert -->
 <div class="modal-overlay" id="modal-recurrentes-alert">
   <div class="modal">
     <div class="modal-handle"></div>
@@ -376,200 +437,208 @@
 </div>
 
 <script>
+// ─── SCRIPT DE APPS SCRIPT (para mostrar en onboarding) ─────────────────────
+const APPS_SCRIPT_CODE = `// SCRIPT.gs — Gastos Hogar
+var SHEET='GastosApp',D='B1',C='C1';
+function doPost(e){try{var b=JSON.parse(e.postData.contents),r=b.action==='save'?saveData(b):b.action==='validarCodigo'?validarCodigo(b.codigo):loadData();return ContentService.createTextOutput(JSON.stringify(r)).setMimeType(ContentService.MimeType.JSON);}catch(err){return ContentService.createTextOutput(JSON.stringify({error:err.message})).setMimeType(ContentService.MimeType.JSON);}}
+function saveData(p){getSheet().getRange(D).setValue(JSON.stringify({usuario:p.usuario,salarios:p.salarios,gastos:p.gastos,periodos:p.periodos,recurrentes:p.recurrentes,categorias:p.categorias,lastSyncTs:p.lastSyncTs,lastModBy:p.lastModBy}));return{ok:true};}
+function loadData(){var v=getSheet().getRange(D).getValue();if(!v)return{lastSyncTs:0};try{return JSON.parse(v);}catch(e){return{lastSyncTs:0};}}
+function validarCodigo(codigo){var s=getSheet().getRange(C).getValue();var codigos=(s||'').split(',').map(function(c){return c.trim().toUpperCase();});return{valido:codigos.indexOf((codigo||'').toUpperCase())!==-1};}
+function getSheet(){var ss=SpreadsheetApp.getActiveSpreadsheet(),s=ss.getSheetByName(SHEET);if(!s){s=ss.insertSheet(SHEET);s.getRange('A1').setValue('B1=datos C1=codigos(separados por coma)').setFontColor('#aaa');}return s;}`;
+
+// ─── State ────────────────────────────────────────────────────────────────────
 let state = {
+  nombreW: 'William', nombreR: 'Rosario',
+  moneda: 'CAD $', metodo: 'proporcional',
   usuario: 'William',
   salarios: { W: 0, R: 0 },
-  gastos: [],
-  periodos: [],
-  recurrentes: [],
+  gastos: [], periodos: [], recurrentes: [],
   categorias: [
-    { icon: '🛒', name: 'Mercado' },
-    { icon: '💡', name: 'Servicios' },
-    { icon: '🍽️', name: 'Restaurante' },
-    { icon: '🏥', name: 'Salud' },
-    { icon: '🚗', name: 'Transporte' },
-    { icon: '🏠', name: 'Hogar' },
-    { icon: '📚', name: 'Educación' },
-    { icon: '🎉', name: 'Ocio' },
-    { icon: '➕', name: 'Otro' }
+    {icon:'🛒',name:'Mercado'},{icon:'💡',name:'Servicios'},{icon:'🍽️',name:'Restaurante'},
+    {icon:'🏥',name:'Salud'},{icon:'🚗',name:'Transporte'},{icon:'🏠',name:'Hogar'},
+    {icon:'📚',name:'Educación'},{icon:'🎉',name:'Ocio'},{icon:'➕',name:'Otro'}
   ],
-  selectedCat: null,
-  selectedWho: 'W',
-  selectedRecWho: 'W',
-  selectedRecCat: null,
-  currentTab: 'gastos',
-  lastSyncTs: 0,
-  lastModBy: '',
-  editingGastoId: null,
-  editingPeriodoIdx: null,
-  editingRecurrenteIdx: null,
-  _pendingReceipt: undefined
+  selectedCat:null, selectedWho:'W', selectedRecWho:'W', selectedRecCat:null,
+  currentTab:'gastos', lastSyncTs:0, lastModBy:'',
+  editingGastoId:null, editingPeriodoIdx:null, editingRecurrenteIdx:null,
+  _pendingReceipt:undefined,
+  salariosOcultos:false, onboardingDone:false, accesoVerificado:false
 };
 
-// ── Sheets config (separate key so reset doesn't erase it) ──────────────────
-function loadSheetsCfg() {
-  try { return JSON.parse(localStorage.getItem('gastosHogar_sheets') || '{}'); } catch(e) { return {}; }
-}
-function saveSheetsCfg(c) { localStorage.setItem('gastosHogar_sheets', JSON.stringify(c)); }
+// ─── Sheets config ────────────────────────────────────────────────────────────
+function loadSheetsCfg(){try{return JSON.parse(localStorage.getItem('gastosHogar_sheets')||'{}');}catch(e){return{};}}
+function saveSheetsCfg(c){localStorage.setItem('gastosHogar_sheets',JSON.stringify(c));}
 let sheetsCfg = loadSheetsCfg();
 
-// ── Sync icon ───────────────────────────────────────────────────────────────
-function setSyncIcon(icon, spin, badge) {
-  const el = document.getElementById('syncIcon');
-  if (el) { el.textContent = icon; el.className = spin ? 'spinning' : ''; }
-  const b = document.getElementById('syncBadge');
-  if (b) b.classList.toggle('show', !!badge);
+// ─── Sync ─────────────────────────────────────────────────────────────────────
+function setSyncIcon(icon,spin,badge){
+  const el=document.getElementById('syncIcon');
+  if(el){el.textContent=icon;el.className=spin?'spinning':'';}
+  const b=document.getElementById('syncBadge');
+  if(b)b.classList.toggle('show',!!badge);
 }
-
-// ── Apps Script communication ───────────────────────────────────────────────
-async function sheetsRequest(action, payload) {
-  if (!sheetsCfg.scriptUrl) return null;
-  setSyncIcon('🔄', true, false);
-  try {
-    const res = await fetch(sheetsCfg.scriptUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify({ action, ...payload })
-    });
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    const data = await res.json();
-    setSyncIcon('✅', false, false);
-    setTimeout(() => setSyncIcon('☁️', false, false), 2500);
+async function sheetsRequest(action,payload){
+  if(!sheetsCfg.scriptUrl)return null;
+  setSyncIcon('🔄',true,false);
+  try{
+    const res=await fetch(sheetsCfg.scriptUrl,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({action,...payload})});
+    if(!res.ok)throw new Error('HTTP '+res.status);
+    const data=await res.json();
+    setSyncIcon('✅',false,false);
+    setTimeout(()=>setSyncIcon('☁️',false,false),2500);
     return data;
-  } catch(e) {
-    setSyncIcon(navigator.onLine ? '⚠️' : '📴', false, false);
-    return null;
-  }
+  }catch(e){setSyncIcon(navigator.onLine?'⚠️':'📴',false,false);return null;}
 }
-
-async function sheetsSave() {
-  if (!sheetsCfg.scriptUrl) return;
-  const payload = {
-    usuario: state.usuario,
-    salarios: state.salarios,
-    gastos: state.gastos,
-    periodos: state.periodos,
-    recurrentes: state.recurrentes,
-    categorias: state.categorias,
-    lastSyncTs: Date.now(),
-    lastModBy: state.usuario
-  };
-  await sheetsRequest('save', payload);
+async function sheetsSave(){
+  if(!sheetsCfg.scriptUrl)return;
+  await sheetsRequest('save',{usuario:state.usuario,salarios:state.salarios,gastos:state.gastos,periodos:state.periodos,recurrentes:state.recurrentes,categorias:state.categorias,lastSyncTs:Date.now(),lastModBy:state.usuario});
 }
-
-async function syncFromCloud(silent) {
-  if (!sheetsCfg.scriptUrl) return;
-  const remote = await sheetsRequest('load', {});
-  if (!remote || !remote.lastSyncTs) return;
-  if (remote.lastSyncTs > (state.lastSyncTs || 0)) {
-    const prevMod = state.lastModBy;
-    state = { ...state, ...remote };
-    localStorage.setItem('gastosHogar', JSON.stringify(remote));
-    if (!silent && remote.lastModBy && remote.lastModBy !== state.usuario) {
-      showNotif('📲 ' + remote.lastModBy + ' actualizó los datos', fmtDateTime(remote.lastSyncTs));
-      setSyncIcon('☁️', false, true);
+async function syncFromCloud(silent){
+  if(!sheetsCfg.scriptUrl)return;
+  const remote=await sheetsRequest('load',{});
+  if(!remote||!remote.lastSyncTs)return;
+  if(remote.lastSyncTs>(state.lastSyncTs||0)){
+    state={...state,...remote};
+    localStorage.setItem('gastosHogar',JSON.stringify(remote));
+    if(!silent&&remote.lastModBy&&remote.lastModBy!==state.usuario){
+      showNotif('📲 '+remote.lastModBy+' actualizó los datos',fmtDateTime(remote.lastSyncTs));
+      setSyncIcon('☁️',false,true);
     }
     updateHeader();
-    const t = state.currentTab;
-    if (t === 'gastos') renderGastos();
-    else if (t === 'recurrentes') renderRecurrentes();
-    else if (t === 'resumen') renderResumen();
-    else if (t === 'historial') renderHistorial();
-    else if (t === 'config') renderConfig();
-  } else {
-    setSyncIcon('☁️', false, false);
-  }
+    const t=state.currentTab;
+    if(t==='gastos')renderGastos();
+    else if(t==='recurrentes')renderRecurrentes();
+    else if(t==='resumen')renderResumen();
+    else if(t==='historial')renderHistorial();
+    else if(t==='config')renderConfig();
+  }else{setSyncIcon('☁️',false,false);}
 }
 
-// ── Local storage ───────────────────────────────────────────────────────────
-function save() {
-  state.lastSyncTs = Date.now();
-  state.lastModBy = state.usuario;
-  const d = {
-    usuario: state.usuario, salarios: state.salarios, gastos: state.gastos,
-    periodos: state.periodos, recurrentes: state.recurrentes, categorias: state.categorias,
-    lastSyncTs: state.lastSyncTs, lastModBy: state.lastModBy
-  };
-  localStorage.setItem('gastosHogar', JSON.stringify(d));
+// ─── Local storage ────────────────────────────────────────────────────────────
+function save(){
+  state.lastSyncTs=Date.now(); state.lastModBy=state.usuario;
+  const d={nombreW:state.nombreW,nombreR:state.nombreR,moneda:state.moneda,metodo:state.metodo,usuario:state.usuario,salarios:state.salarios,gastos:state.gastos,periodos:state.periodos,recurrentes:state.recurrentes,categorias:state.categorias,lastSyncTs:state.lastSyncTs,lastModBy:state.lastModBy,salariosOcultos:state.salariosOcultos,onboardingDone:state.onboardingDone,accesoVerificado:state.accesoVerificado};
+  localStorage.setItem('gastosHogar',JSON.stringify(d));
   sheetsSave();
 }
-function load() {
-  try {
-    const d = localStorage.getItem('gastosHogar');
-    if (d) state = { ...state, ...JSON.parse(d) };
-  } catch(e) {}
+function load(){
+  try{const d=localStorage.getItem('gastosHogar');if(d)state={...state,...JSON.parse(d)};}catch(e){}
 }
 
-// ── Notification ────────────────────────────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 let notifTimer;
-function showNotif(msg, sub) {
-  const el = document.getElementById('notifBanner');
-  if (!el) return;
-  document.getElementById('notifText').textContent = msg;
-  document.getElementById('notifSub').textContent = sub || '';
-  el.classList.add('show');
-  clearTimeout(notifTimer);
-  notifTimer = setTimeout(() => el.classList.remove('show'), 6000);
+function showNotif(msg,sub){
+  const el=document.getElementById('notifBanner');if(!el)return;
+  document.getElementById('notifText').textContent=msg;
+  document.getElementById('notifSub').textContent=sub||'';
+  el.classList.add('show');clearTimeout(notifTimer);
+  notifTimer=setTimeout(()=>el.classList.remove('show'),6000);
+}
+function nW(){return state.nombreW||'Persona 1';}
+function nR(){return state.nombreR||'Persona 2';}
+function fmt(n){return state.moneda+' '+parseFloat(n||0).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,',');}
+function fmtSal(n){return state.salariosOcultos?'••••••':fmt(n);}
+function fmtDate(ts){return new Date(ts).toLocaleDateString('es-CA',{day:'numeric',month:'short'});}
+function fmtDateTime(ts){return new Date(ts).toLocaleString('es-CA',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});}
+
+// ─── Calculations ─────────────────────────────────────────────────────────────
+function getPct(){
+  if(state.metodo==='50/50')return{W:0.5,R:0.5};
+  const t=(state.salarios.W||0)+(state.salarios.R||0);
+  if(!t)return{W:0.5,R:0.5};
+  return{W:state.salarios.W/t,R:state.salarios.R/t};
+}
+function getTotales(){
+  let pagadoW=0,pagadoR=0,total=0,asumidoW=0,asumidoR=0;
+  state.gastos.forEach(g=>{
+    if(g.asumido){if(g.quien==='W')asumidoW+=g.monto;else asumidoR+=g.monto;}
+    else{total+=g.monto;if(g.quien==='W')pagadoW+=g.monto;else pagadoR+=g.monto;}
+  });
+  const p=getPct();
+  const debeW=total*p.W,debeR=total*p.R;
+  const saldoW=(pagadoW-debeW)-asumidoR+asumidoW;
+  return{pagadoW,pagadoR,total,debeW,debeR,saldoW,asumidoW,asumidoR};
 }
 
-// ── Helpers ─────────────────────────────────────────────────────────────────
-function fmt(n) { return '$' + parseFloat(n || 0).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
-function fmtDate(ts) { return new Date(ts).toLocaleDateString('es-CA', { day: 'numeric', month: 'short' }); }
-function fmtDateTime(ts) { return new Date(ts).toLocaleString('es-CA', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }); }
-
-function getPct() {
-  const t = (state.salarios.W || 0) + (state.salarios.R || 0);
-  if (!t) return { W: 0, R: 0 };
-  return { W: state.salarios.W / t, R: state.salarios.R / t };
-}
-function getTotales() {
-  let pagadoW = 0, pagadoR = 0, total = 0;
-  state.gastos.forEach(g => { total += g.monto; if (g.quien === 'W') pagadoW += g.monto; else pagadoR += g.monto; });
-  const p = getPct();
-  return { pagadoW, pagadoR, total, debeW: total * p.W, debeR: total * p.R, saldoW: pagadoW - total * p.W };
-}
-
-// ── Header ──────────────────────────────────────────────────────────────────
-function updateHeader() {
-  const p = getPct();
-  document.getElementById('pctW').textContent = p.W ? Math.round(p.W * 100) + '%' : '—';
-  document.getElementById('pctR').textContent = p.R ? Math.round(p.R * 100) + '%' : '—';
-  document.getElementById('userBadge').textContent = state.usuario;
-  if (!state.gastos.length || (!state.salarios.W && !state.salarios.R)) {
-    document.getElementById('saldoLabel').textContent = 'Sin gastos aún';
-    document.getElementById('saldoAmount').textContent = '$0.00';
-    document.getElementById('saldoQuien').textContent = 'Registra salarios y gastos';
-    return;
+// ─── Access control ───────────────────────────────────────────────────────────
+async function verificarAcceso(){
+  const codigo=document.getElementById('accessInput').value.trim();
+  if(!codigo){document.getElementById('accessError').classList.add('show');return;}
+  if(!sheetsCfg.scriptUrl){
+    // Sin Sheets: acceso libre (para tú mismo)
+    state.accesoVerificado=true;save();
+    document.getElementById('accessScreen').classList.remove('open');
+    arrancarApp();return;
   }
-  const t = getTotales(), diff = Math.abs(t.saldoW);
-  if (diff < 0.01) {
-    document.getElementById('saldoLabel').textContent = 'Están al día';
-    document.getElementById('saldoAmount').textContent = '$0.00';
-    document.getElementById('saldoQuien').textContent = 'No hay deudas pendientes';
-  } else {
-    document.getElementById('saldoLabel').textContent = t.saldoW > 0 ? 'Rosario le debe a William' : 'William le debe a Rosario';
-    document.getElementById('saldoAmount').textContent = fmt(diff);
-    document.getElementById('saldoQuien').textContent = 'Según porcentaje de salarios';
+  document.getElementById('accessInput').disabled=true;
+  const res=await sheetsRequest('validarCodigo',{codigo});
+  document.getElementById('accessInput').disabled=false;
+  if(res&&res.valido){
+    state.accesoVerificado=true;save();
+    document.getElementById('accessScreen').classList.remove('open');
+    arrancarApp();
+  }else{
+    document.getElementById('accessError').classList.add('show');
+    document.getElementById('accessInput').value='';
+    document.getElementById('accessInput').focus();
+  }
+}
+document.getElementById('accessInput').addEventListener('keydown',e=>{if(e.key==='Enter')verificarAcceso();});
+
+// ─── Header ───────────────────────────────────────────────────────────────────
+function updateHeader(){
+  document.getElementById('pctNameW').textContent=nW();
+  document.getElementById('pctNameR').textContent=nR();
+  document.getElementById('userBadge').textContent=state.usuario;
+  document.getElementById('eyeBtn').textContent=state.salariosOcultos?'🙈':'👁';
+  const pct=getPct();
+  document.getElementById('pctW').textContent=state.metodo==='50/50'?'50%':(pct.W?Math.round(pct.W*100)+'%':'—');
+  document.getElementById('pctR').textContent=state.metodo==='50/50'?'50%':(pct.R?Math.round(pct.R*100)+'%':'—');
+  if(!state.gastos.length||(state.metodo==='proporcional'&&!state.salarios.W&&!state.salarios.R)){
+    document.getElementById('saldoLabel').textContent='Sin gastos aún';
+    document.getElementById('saldoAmount').textContent=fmt(0);
+    document.getElementById('saldoQuien').textContent='Registra salarios y gastos';return;
+  }
+  const t=getTotales(),diff=Math.abs(t.saldoW);
+  if(diff<0.01){
+    document.getElementById('saldoLabel').textContent='¡Están al día!';
+    document.getElementById('saldoAmount').textContent=fmt(0);
+    document.getElementById('saldoQuien').textContent='No hay deudas pendientes';
+  }else{
+    document.getElementById('saldoLabel').textContent=t.saldoW>0?`${nR()} le debe a ${nW()}`:`${nW()} le debe a ${nR()}`;
+    document.getElementById('saldoAmount').textContent=fmt(diff);
+    document.getElementById('saldoQuien').textContent=state.metodo==='50/50'?'División 50/50':'Según porcentaje de salarios';
   }
 }
 
-// ── Gasto item HTML ─────────────────────────────────────────────────────────
-function gastoItemHtml(g, periodoIdx) {
-  const cat = state.categorias.find(c => c.name === g.categoria) || { icon: '💰', name: 'Otro' };
-  const pi = periodoIdx;
-  const editFn = pi !== null ? `openEditGastoPeriodo(${pi},'${g.id}')` : `openEditGasto('${g.id}')`;
-  const delFn  = pi !== null ? `eliminarGastoPeriodo(${pi},'${g.id}')` : `eliminarGasto('${g.id}')`;
+// ─── Toggle salarios ──────────────────────────────────────────────────────────
+function toggleSalarios(){
+  state.salariosOcultos=!state.salariosOcultos;save();updateHeader();
+  renderGastos();
+  if(state.currentTab==='resumen')renderResumen();
+  if(state.currentTab==='historial')renderHistorial();
+}
+
+// ─── Gasto item HTML ──────────────────────────────────────────────────────────
+function gastoItemHtml(g,periodoIdx){
+  const cat=state.categorias.find(c=>c.name===g.categoria)||{icon:'💰',name:'Otro'};
+  const pi=periodoIdx;
+  const editFn=pi!==null?`openEditGastoPeriodo(${pi},'${g.id}')`:`openEditGasto('${g.id}')`;
+  const delFn=pi!==null?`eliminarGastoPeriodo(${pi},'${g.id}')`:`eliminarGasto('${g.id}')`;
+  const nombre=g.quien==='W'?nW():nR();
+  const cls=g.quien==='W'?'who-w':'who-r';
   return `<div class="gasto-item">
     <div class="gasto-icon" style="background:${g.quien==='W'?'#eef2ff':'#fdf2f8'}">${cat.icon}</div>
     <div class="gasto-info">
       <div class="gasto-desc">${g.desc}</div>
       <div class="gasto-meta">
-        <span class="who-badge ${g.quien==='W'?'who-w':'who-r'}">${g.quien==='W'?'William':'Rosario'}</span>
+        <span class="who-badge ${cls}">${nombre}</span>
         <span>${cat.name}</span>
-        ${g.recurrente ? '<span class="rec-badge">Fijo</span>' : ''}
-        ${g.receipt ? `<span class="receipt-link" onclick="verRecibo('${g.id}',${pi})">📎 recibo</span>` : ''}
+        ${g.recurrente?'<span class="rec-badge">Fijo</span>':''}
+        ${g.asumido?'<span class="asumido-badge">✓ Asumido</span>':''}
+        ${g.receipt?`<span class="receipt-link" onclick="verRecibo('${g.id}',${pi})">📎 recibo</span>`:''}
       </div>
-      ${g.nota ? `<div class="gasto-nota">📝 ${g.nota}</div>` : ''}
+      ${g.nota?`<div class="gasto-nota">📝 ${g.nota}</div>`:''}
     </div>
     <div class="gasto-right">
       <div class="gasto-monto">${fmt(g.monto)}</div>
@@ -582,57 +651,56 @@ function gastoItemHtml(g, periodoIdx) {
   </div>`;
 }
 
-// ── Render Gastos ───────────────────────────────────────────────────────────
-function renderGastos() {
-  const el = document.getElementById('tab-gastos-content');
-  let html = `<div class="notif-banner" id="notifBanner"><div class="notif-text" id="notifText"></div><div class="notif-sub" id="notifSub"></div></div>`;
-  html += `<div class="card salary-card" style="margin-bottom:12px;">
+// ─── Render Gastos ────────────────────────────────────────────────────────────
+function renderGastos(){
+  const el=document.getElementById('tab-gastos-content');
+  let html=`<div class="notif-banner" id="notifBanner"><div class="notif-text" id="notifText"></div><div class="notif-sub" id="notifSub"></div></div>`;
+  html+=`<div class="card salary-card" style="margin-bottom:12px;">
     <div style="display:flex;justify-content:space-between;align-items:center;">
       <div>
         <div style="font-size:13px;font-weight:700;color:var(--primary);">Salarios del período</div>
-        <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">W: ${state.salarios.W ? fmt(state.salarios.W) : 'pendiente'} · R: ${state.salarios.R ? fmt(state.salarios.R) : 'pendiente'}</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">${nW()}: ${fmtSal(state.salarios.W||0)} · ${nR()}: ${fmtSal(state.salarios.R||0)}</div>
       </div>
       <button onclick="openModal('salarios')" style="background:var(--primary);color:white;border:none;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif;">Actualizar</button>
     </div>
   </div>`;
-  if (!state.gastos.length) {
-    html += `<div class="empty"><div class="empty-icon">🧾</div><div class="empty-text">No hay gastos aún.<br>Toca el + para agregar uno.</div></div>`;
-    el.innerHTML = html; return;
+  if(!state.gastos.length){
+    html+=`<div class="empty"><div class="empty-icon">🧾</div><div class="empty-text">No hay gastos aún.<br>Toca el + para agregar uno.</div></div>`;
+    el.innerHTML=html;return;
   }
-  const byDate = {};
-  [...state.gastos].reverse().forEach(g => {
-    const d = new Date(g.ts).toLocaleDateString('es-CA', { weekday: 'long', day: 'numeric', month: 'long' });
-    if (!byDate[d]) byDate[d] = [];
-    byDate[d].push(g);
+  const byDate={};
+  [...state.gastos].reverse().forEach(g=>{
+    const d=new Date(g.ts).toLocaleDateString('es-CA',{weekday:'long',day:'numeric',month:'long'});
+    if(!byDate[d])byDate[d]=[];byDate[d].push(g);
   });
-  Object.entries(byDate).forEach(([date, gastos]) => {
-    html += `<div class="card-title" style="padding:0 4px;margin-bottom:6px;margin-top:8px;">${date}</div><div class="card" style="padding:12px 16px;">`;
-    gastos.forEach(g => { html += gastoItemHtml(g, null); });
-    html += '</div>';
+  Object.entries(byDate).forEach(([date,gastos])=>{
+    html+=`<div class="card-title" style="padding:0 4px;margin-bottom:6px;margin-top:8px;">${date}</div><div class="card" style="padding:12px 16px;">`;
+    gastos.forEach(g=>{html+=gastoItemHtml(g,null);});
+    html+='</div>';
   });
-  el.innerHTML = html;
+  el.innerHTML=html;
 }
 
-// ── Render Recurrentes ──────────────────────────────────────────────────────
-function renderRecurrentes() {
-  const el = document.getElementById('tab-recurrentes-content');
-  let html = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+// ─── Render Recurrentes ───────────────────────────────────────────────────────
+function renderRecurrentes(){
+  const el=document.getElementById('tab-recurrentes-content');
+  let html=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
     <div style="font-size:14px;font-weight:800;">Gastos fijos del hogar</div>
     <button onclick="abrirNuevoRecurrente()" style="background:var(--primary);color:white;border:none;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif;">+ Nuevo</button>
   </div>`;
-  if (!state.recurrentes.length) {
-    html += `<div class="empty"><div class="empty-icon">🔄</div><div class="empty-text">No hay gastos fijos aún.<br>Agrega arriendo, internet, etc.</div></div>`;
-    el.innerHTML = html; return;
+  if(!state.recurrentes.length){
+    html+=`<div class="empty"><div class="empty-icon">🔄</div><div class="empty-text">No hay gastos fijos aún.<br>Agrega arriendo, internet, etc.</div></div>`;
+    el.innerHTML=html;return;
   }
-  html += `<div class="card" style="padding:12px 16px;">`;
-  state.recurrentes.forEach((r, i) => {
-    const cat = state.categorias.find(c => c.name === r.categoria) || { icon: '💰' };
-    html += `<div class="recurrente-item">
+  html+=`<div class="card" style="padding:12px 16px;">`;
+  state.recurrentes.forEach((r,i)=>{
+    const cat=state.categorias.find(c=>c.name===r.categoria)||{icon:'💰'};
+    html+=`<div class="recurrente-item">
       <div class="gasto-icon" style="background:${r.quien==='W'?'#eef2ff':'#fdf2f8'}">${cat.icon}</div>
       <div class="recurrente-info">
         <div class="recurrente-name">${r.desc}</div>
         <div class="recurrente-meta">
-          <span class="who-badge ${r.quien==='W'?'who-w':'who-r'}">${r.quien==='W'?'William':'Rosario'}</span>
+          <span class="who-badge ${r.quien==='W'?'who-w':'who-r'}">${r.quien==='W'?nW():nR()}</span>
           <span>${r.categoria}</span>
         </div>
       </div>
@@ -643,440 +711,509 @@ function renderRecurrentes() {
       </div>
     </div>`;
   });
-  html += `</div><p style="font-size:12px;color:var(--text-muted);font-weight:600;text-align:center;margin-top:8px;">Al cuadrar cuentas podrás activarlos para el nuevo período.</p>`;
-  el.innerHTML = html;
+  html+=`</div><p style="font-size:12px;color:var(--text-muted);font-weight:600;text-align:center;margin-top:8px;">Al cuadrar cuentas podrás activarlos para el nuevo período.</p>`;
+  el.innerHTML=html;
 }
 
-// ── Render Resumen ──────────────────────────────────────────────────────────
-function renderResumen() {
-  const el = document.getElementById('tab-resumen-content');
-  const t = getTotales(), p = getPct();
-  if (!state.salarios.W && !state.salarios.R) {
-    el.innerHTML = `<div class="empty"><div class="empty-icon">💰</div><div class="empty-text">Primero ingresa los salarios<br>en la pestaña de Gastos.</div></div>`; return;
+// ─── Render Resumen ───────────────────────────────────────────────────────────
+function renderResumen(){
+  const el=document.getElementById('tab-resumen-content');
+  const t=getTotales(),p=getPct();
+  if(state.metodo==='proporcional'&&!state.salarios.W&&!state.salarios.R){
+    el.innerHTML=`<div class="empty"><div class="empty-icon">💰</div><div class="empty-text">Primero ingresa los salarios<br>en la pestaña de Gastos.</div></div>`;return;
   }
-  const cats = {};
-  state.gastos.forEach(g => { cats[g.categoria] = (cats[g.categoria] || 0) + g.monto; });
-  const catHtml = Object.entries(cats).sort((a,b)=>b[1]-a[1]).map(([cat, tot]) => {
-    const c = state.categorias.find(x => x.name === cat) || { icon: '💰' };
+  const cats={};
+  state.gastos.filter(g=>!g.asumido).forEach(g=>{cats[g.categoria]=(cats[g.categoria]||0)+g.monto;});
+  const catHtml=Object.entries(cats).sort((a,b)=>b[1]-a[1]).map(([cat,tot])=>{
+    const c=state.categorias.find(x=>x.name===cat)||{icon:'💰'};
     return `<div class="resumen-row"><div class="resumen-label">${c.icon} ${cat}</div><div class="resumen-val">${fmt(tot)}</div></div>`;
   }).join('');
-  const diff = Math.abs(t.saldoW), quien = t.saldoW > 0 ? 'Rosario le debe a William' : 'William le debe a Rosario';
-  el.innerHTML = `
+  const diff=Math.abs(t.saldoW),quien=t.saldoW>0?`${nR()} le debe a ${nW()}`:`${nW()} le debe a ${nR()}`;
+  const asumidosHtml=(t.asumidoW>0||t.asumidoR>0)?`
+    <div class="card">
+      <div class="card-title">Gastos asumidos</div>
+      ${t.asumidoW>0?`<div class="resumen-row"><div class="resumen-label">${nW()} asumió</div><div class="resumen-val" style="color:var(--primary);">${fmt(t.asumidoW)}</div></div>`:''}
+      ${t.asumidoR>0?`<div class="resumen-row"><div class="resumen-label">${nR()} asumió</div><div class="resumen-val" style="color:var(--secondary);">${fmt(t.asumidoR)}</div></div>`:''}
+      <div style="font-size:11px;color:var(--text-muted);font-weight:600;margin-top:8px;padding-top:8px;border-top:1px solid var(--border);">No entran al reparto — se descuentan del saldo final</div>
+    </div>`:'';
+  const salHtml=state.metodo==='proporcional'?`
     <div class="card">
       <div class="card-title">Salarios y porcentajes</div>
-      <div class="resumen-row"><div class="resumen-label">William</div><div style="display:flex;gap:8px;align-items:center;"><span class="tag">${Math.round(p.W*100)}%</span><div class="resumen-val">${fmt(state.salarios.W)}</div></div></div>
-      <div class="resumen-row"><div class="resumen-label">Rosario</div><div style="display:flex;gap:8px;align-items:center;"><span class="tag" style="background:var(--secondary-light);color:var(--secondary);">${Math.round(p.R*100)}%</span><div class="resumen-val">${fmt(state.salarios.R)}</div></div></div>
-      <div class="resumen-row"><div class="resumen-label" style="font-weight:700;">Total ingresos</div><div class="resumen-val">${fmt((state.salarios.W||0)+(state.salarios.R||0))}</div></div>
-    </div>
+      <div class="resumen-row"><div class="resumen-label">${nW()}</div><div style="display:flex;gap:8px;align-items:center;"><span class="tag">${Math.round(p.W*100)}%</span><div class="resumen-val">${fmtSal(state.salarios.W)}</div></div></div>
+      <div class="resumen-row"><div class="resumen-label">${nR()}</div><div style="display:flex;gap:8px;align-items:center;"><span class="tag" style="background:var(--secondary-light);color:var(--secondary);">${Math.round(p.R*100)}%</span><div class="resumen-val">${fmtSal(state.salarios.R)}</div></div></div>
+    </div>`:`
     <div class="card">
-      <div class="card-title">Gastos del período</div>
-      <div class="resumen-row"><div class="resumen-label">Total gastado</div><div class="resumen-val">${fmt(t.total)}</div></div>
-      <div class="resumen-row"><div class="resumen-label">William debería pagar</div><div class="resumen-val">${fmt(t.debeW)}</div></div>
-      <div class="resumen-row"><div class="resumen-label">Rosario debería pagar</div><div class="resumen-val">${fmt(t.debeR)}</div></div>
+      <div class="card-title">Método de reparto</div>
+      <div class="resumen-row"><div class="resumen-label">División</div><div class="resumen-val">50 / 50</div></div>
+    </div>`;
+  el.innerHTML=`${salHtml}
+    <div class="card">
+      <div class="card-title">Gastos compartidos</div>
+      <div class="resumen-row"><div class="resumen-label">Total a repartir</div><div class="resumen-val">${fmt(t.total)}</div></div>
+      <div class="resumen-row"><div class="resumen-label">${nW()} debería pagar</div><div class="resumen-val">${fmt(t.debeW)}</div></div>
+      <div class="resumen-row"><div class="resumen-label">${nR()} debería pagar</div><div class="resumen-val">${fmt(t.debeR)}</div></div>
     </div>
     <div class="card">
       <div class="card-title">Lo que cada uno pagó</div>
-      <div class="resumen-row"><div class="resumen-label">William pagó</div><div class="resumen-val">${fmt(t.pagadoW)}</div></div>
-      <div class="resumen-row"><div class="resumen-label">Rosario pagó</div><div class="resumen-val">${fmt(t.pagadoR)}</div></div>
+      <div class="resumen-row"><div class="resumen-label">${nW()} pagó</div><div class="resumen-val">${fmt(t.pagadoW)}</div></div>
+      <div class="resumen-row"><div class="resumen-label">${nR()} pagó</div><div class="resumen-val">${fmt(t.pagadoR)}</div></div>
     </div>
-    ${diff > 0.01 ? `<div class="highlight-box ${t.saldoW>0?'positive':'negative'}"><div class="highlight-label">${quien}</div><div class="highlight-amount">${fmt(diff)}</div></div>` : '<div class="highlight-box positive"><div class="highlight-label">¡Están al día!</div><div class="highlight-amount" style="color:var(--success);">$0.00</div></div>'}
-    ${catHtml ? `<div class="card" style="margin-top:12px;"><div class="card-title">Por categoría</div>${catHtml}</div>` : ''}
+    ${asumidosHtml}
+    ${diff>0.01?`<div class="highlight-box ${t.saldoW>0?'positive':'negative'}"><div class="highlight-label">${quien}</div><div class="highlight-amount">${fmt(diff)}</div></div>`:`<div class="highlight-box positive"><div class="highlight-label">¡Están al día!</div><div class="highlight-amount" style="color:var(--success);">${fmt(0)}</div></div>`}
+    ${catHtml?`<div class="card" style="margin-top:12px;"><div class="card-title">Por categoría</div>${catHtml}</div>`:''}
     <button class="btn-primary" style="margin-top:12px;" onclick="openModal('cerrar')">Cuadrar cuentas</button>`;
 }
 
-// ── Render Historial ────────────────────────────────────────────────────────
-function renderHistorial() {
-  const el = document.getElementById('tab-historial-content');
-  if (!state.periodos.length) {
-    el.innerHTML = `<div class="empty"><div class="empty-icon">📅</div><div class="empty-text">No hay períodos cerrados aún.</div></div>`; return;
-  }
-  el.innerHTML = [...state.periodos].reverse().map((p, ri) => {
-    const i = state.periodos.length - 1 - ri;
+// ─── Render Historial ─────────────────────────────────────────────────────────
+function renderHistorial(){
+  const el=document.getElementById('tab-historial-content');
+  if(!state.periodos.length){el.innerHTML=`<div class="empty"><div class="empty-icon">📅</div><div class="empty-text">No hay períodos cerrados aún.</div></div>`;return;}
+  el.innerHTML=[...state.periodos].reverse().map((p,ri)=>{
+    const i=state.periodos.length-1-ri;
+    const salInfo=state.salariosOcultos?'••••••':`${nW()}: ${fmt(p.salarios?.W||0)} · ${nR()}: ${fmt(p.salarios?.R||0)}`;
+    const metInfo=p.metodo==='50/50'?'50/50':`${nW()}:${Math.round(p.pctW*100)}% ${nR()}:${Math.round(p.pctR*100)}%`;
     return `<div class="periodo-card">
       <div class="periodo-header" onclick="togglePeriodo(${i})">
         <div>
-          <div class="periodo-title">Período ${i + 1}</div>
+          <div class="periodo-title">Período ${i+1}</div>
           <div class="periodo-fecha">${p.fecha}</div>
-          <div class="periodo-fecha">${p.gastos.length} gastos · W:${Math.round(p.pctW*100)}% R:${Math.round(p.pctR*100)}%</div>
-          <div class="periodo-fecha">Salarios — W: ${fmt(p.salarios.W)} · R: ${fmt(p.salarios.R)}</div>
+          <div class="periodo-fecha">${p.gastos.length} gastos · ${metInfo}</div>
+          <div class="periodo-fecha">${salInfo}</div>
         </div>
         <div style="text-align:right;">
           <div class="periodo-total">${fmt(p.total)}</div>
           <div class="periodo-badge">Liquidado</div>
         </div>
       </div>
-      ${p.deuda > 0.01 ? `<div style="font-size:12px;font-weight:700;color:var(--text-muted);margin-top:8px;padding-top:8px;border-top:1px solid var(--border);">${p.quien} · ${fmt(p.deuda)}</div>` : ''}
+      ${p.deuda>0.01?`<div style="font-size:12px;font-weight:700;color:var(--text-muted);margin-top:8px;padding-top:8px;border-top:1px solid var(--border);">${p.quien} · ${fmt(p.deuda)}</div>`:''}
       <div class="periodo-gastos" id="periodo-gastos-${i}">
-        ${p.gastos.map(g => gastoItemHtml(g, i)).join('')}
+        ${p.gastos.map(g=>gastoItemHtml(g,i)).join('')}
       </div>
     </div>`;
   }).join('');
 }
+function togglePeriodo(i){const el=document.getElementById('periodo-gastos-'+i);if(el)el.classList.toggle('open');}
 
-function togglePeriodo(i) {
-  const el = document.getElementById('periodo-gastos-' + i);
-  if (el) el.classList.toggle('open');
-}
-
-// ── Render Config ───────────────────────────────────────────────────────────
-function renderConfig() {
-  const el = document.getElementById('tab-config-content');
-  const connected = !!sheetsCfg.scriptUrl;
-  el.innerHTML = `
-    <div class="sync-section">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-        <div style="font-size:14px;font-weight:800;color:var(--primary);">☁️ Google Sheets</div>
-        <span style="font-size:12px;font-weight:700;color:var(--text-muted);">${connected ? '🟢 Configurado' : '⚪ Sin configurar'}</span>
-      </div>
-      <div class="sync-label">URL del Apps Script</div>
-      <input type="url" class="sync-input" id="cfgScriptUrl" placeholder="https://script.google.com/macros/s/..." value="${sheetsCfg.scriptUrl || ''}">
-      <div style="font-size:11px;color:var(--text-muted);margin-top:4px;font-weight:600;">La URL no cambia ni expira — se configura una sola vez.</div>
-      <button class="btn-primary" style="margin-top:10px;" onclick="guardarSheetsCfg()">Guardar y conectar</button>
-      ${connected ? `<button class="btn-secondary" onclick="syncFromCloud(false)">🔄 Sincronizar ahora</button>` : ''}
+// ─── Render Config ────────────────────────────────────────────────────────────
+function renderConfig(){
+  const el=document.getElementById('tab-config-content');
+  const monedas=['CAD $','USD $','COP $','MXN $','EUR €','GBP £'];
+  el.innerHTML=`
+    <div class="card">
+      <div class="card-title">Personas</div>
+      <div class="config-row"><div class="config-label">Persona 1</div><input class="form-input form-input-sm" style="flex:1;" id="cfgNombreW" value="${nW()}" placeholder="Nombre"></div>
+      <div class="config-row"><div class="config-label">Persona 2</div><input class="form-input form-input-sm" style="flex:1;" id="cfgNombreR" value="${nR()}" placeholder="Nombre"></div>
+      <button class="btn-primary" onclick="guardarNombres()">Guardar nombres</button>
     </div>
     <div class="card">
-      <div class="card-title">Pasos de configuración</div>
-      <div class="step-box"><span class="step-num">1</span><span class="step-text">Crea una hoja en Google Sheets</span><a class="step-link" href="https://sheets.new" target="_blank">→ sheets.new</a></div>
-      <div class="step-box"><span class="step-num">2</span><span class="step-text">Ve a Extensiones → Apps Script → pega el código del archivo SCRIPT.js</span></div>
-      <div class="step-box"><span class="step-num">3</span><span class="step-text">Implementar → Nueva implementación → Tipo: Aplicación web → Acceso: Cualquier usuario</span></div>
-      <div class="step-box"><span class="step-num">4</span><span class="step-text">Copia la URL generada y pégala arriba. El otro celular solo necesita la misma URL.</span></div>
-      <div style="background:#fef3c7;border-radius:8px;padding:10px 12px;margin-top:4px;font-size:12px;font-weight:700;color:#92400e;">💡 La URL nunca expira ni requiere tokens.</div>
+      <div class="card-title">Moneda</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px;">
+        ${monedas.map(m=>`<button class="cat-btn ${state.moneda===m?'selected':''}" onclick="selMoneda('${m}')">${m}</button>`).join('')}
+      </div>
+      <div style="font-size:12px;color:var(--text-muted);font-weight:600;">¿Otra moneda?</div>
+      <input class="form-input form-input-sm" id="cfgMonedaCustom" style="margin-top:6px;" placeholder="Ej: PEN S/." value="${monedas.includes(state.moneda)?'':state.moneda}">
+      <button class="btn-secondary" onclick="guardarMonedaCustom()">Usar esta moneda</button>
     </div>
-    <div class="card" style="margin-top:12px;">
+    <div class="card">
+      <div class="card-title">Método de reparto</div>
+      <div class="method-selector">
+        <button class="method-btn ${state.metodo==='proporcional'?'selected':''}" onclick="selMetodo('proporcional')"><span class="method-icon">📊</span>Por salario</button>
+        <button class="method-btn ${state.metodo==='50/50'?'selected':''}" onclick="selMetodo('50/50')"><span class="method-icon">⚖️</span>50 / 50</button>
+      </div>
+      <div style="font-size:12px;color:var(--text-muted);font-weight:600;margin-top:10px;">${state.metodo==='proporcional'?'Cada uno paga según su porcentaje de ingresos.':'Los gastos se dividen en partes iguales.'}</div>
+    </div>
+    <div class="card">
+      <div class="card-title">Google Sheets</div>
+      <div style="font-size:12px;color:var(--text-muted);font-weight:600;margin-bottom:8px;">${sheetsCfg.scriptUrl?'🟢 Configurado':'⚪ Sin configurar'}</div>
+      <div class="sync-label">URL del Apps Script</div>
+      <input type="url" class="sync-input" id="cfgScriptUrl" placeholder="https://script.google.com/macros/s/..." value="${sheetsCfg.scriptUrl||''}">
+      <button class="btn-primary" style="margin-top:10px;" onclick="guardarSheetsCfg()">Guardar y conectar</button>
+      ${sheetsCfg.scriptUrl?`<button class="btn-secondary" onclick="syncFromCloud(false)">🔄 Sincronizar ahora</button>`:''}
+    </div>
+    <div class="card">
       <div class="card-title">Categorías</div>
-      <div>${state.categorias.map(c => `<div class="cat-manage"><span class="cat-manage-icon">${c.icon}</span><span class="cat-manage-name">${c.name}</span></div>`).join('')}</div>
+      <div>${state.categorias.map(c=>`<div class="cat-manage"><span class="cat-manage-icon">${c.icon}</span><span class="cat-manage-name">${c.name}</span></div>`).join('')}</div>
       <button class="btn-secondary" style="margin-top:8px;" onclick="openModal('categorias')">Gestionar categorías</button>
     </div>
-    <div class="card" style="margin-top:12px;">
-      <div class="card-title">Datos</div>
+    <div class="card" style="margin-top:4px;">
+      <div class="card-title">Otros</div>
+      <button class="btn-secondary" onclick="reiniciarOnboarding()">Repetir configuración inicial</button>
       <button class="btn-danger" onclick="resetData()">Borrar todos los datos locales</button>
     </div>`;
 }
 
-// ── Tab navigation ──────────────────────────────────────────────────────────
-function showTab(tab) {
-  ['gastos','recurrentes','resumen','historial','config'].forEach(t => {
-    document.getElementById('tab-'+t+'-content').style.display = t === tab ? 'block' : 'none';
-    document.getElementById('tab-'+t).classList.toggle('active', t === tab);
+// ─── Config actions ───────────────────────────────────────────────────────────
+function guardarNombres(){
+  const w=document.getElementById('cfgNombreW').value.trim();
+  const r=document.getElementById('cfgNombreR').value.trim();
+  if(!w||!r){alert('Ingresa ambos nombres');return;}
+  state.nombreW=w;state.nombreR=r;save();updateHeader();renderConfig();
+  alert('Nombres guardados ✓');
+}
+function selMoneda(m){state.moneda=m;save();renderConfig();updateHeader();}
+function guardarMonedaCustom(){const v=document.getElementById('cfgMonedaCustom').value.trim();if(!v)return;state.moneda=v;save();renderConfig();updateHeader();}
+function selMetodo(m){state.metodo=m;save();renderConfig();updateHeader();}
+function guardarSheetsCfg(){
+  const url=document.getElementById('cfgScriptUrl').value.trim();
+  if(!url){alert('Ingresa la URL del script');return;}
+  sheetsCfg={scriptUrl:url};saveSheetsCfg(sheetsCfg);
+  alert('¡Configurado! Sincronizando...');syncFromCloud(false);renderConfig();
+}
+
+// ─── Tabs ─────────────────────────────────────────────────────────────────────
+function showTab(tab){
+  ['gastos','recurrentes','resumen','historial','config'].forEach(t=>{
+    document.getElementById('tab-'+t+'-content').style.display=t===tab?'block':'none';
+    document.getElementById('tab-'+t).classList.toggle('active',t===tab);
   });
-  document.getElementById('fab').style.display = tab === 'gastos' ? 'flex' : 'none';
-  state.currentTab = tab;
-  if (tab === 'gastos') renderGastos();
-  else if (tab === 'recurrentes') renderRecurrentes();
-  else if (tab === 'resumen') renderResumen();
-  else if (tab === 'historial') renderHistorial();
-  else if (tab === 'config') renderConfig();
+  document.getElementById('fab').style.display=tab==='gastos'?'flex':'none';
+  state.currentTab=tab;
+  if(tab==='gastos')renderGastos();
+  else if(tab==='recurrentes')renderRecurrentes();
+  else if(tab==='resumen')renderResumen();
+  else if(tab==='historial')renderHistorial();
+  else if(tab==='config')renderConfig();
   updateHeader();
 }
 
-// ── Modals ──────────────────────────────────────────────────────────────────
-function openModal(id) {
-  if (id === 'agregar') {
-    state.editingGastoId = null; state.editingPeriodoIdx = null;
-    document.getElementById('modalAgregarTitle').textContent = 'Nuevo gasto';
-    document.getElementById('guardarGastoBtn').textContent = 'Guardar gasto';
-    state.selectedWho = state.usuario === 'William' ? 'W' : 'R';
-    state.selectedCat = null;
-    document.getElementById('montoInput').value = '';
-    document.getElementById('descInput').value = '';
-    document.getElementById('notaInput').value = '';
-    document.getElementById('receiptPreview').style.display = 'none';
-    document.getElementById('removeReceiptBtn').style.display = 'none';
-    document.getElementById('receiptInput').value = '';
-    state._pendingReceipt = undefined;
-    updateWhoButtons(); renderCatsGrid('catsGrid', null, 'selectCat');
+// ─── Modals ───────────────────────────────────────────────────────────────────
+function openModal(id){
+  if(id==='agregar'){
+    state.editingGastoId=null;state.editingPeriodoIdx=null;
+    document.getElementById('modalAgregarTitle').textContent='Nuevo gasto';
+    document.getElementById('guardarGastoBtn').textContent='Guardar gasto';
+    state.selectedWho=state.usuario===nW()?'W':'R';
+    state.selectedCat=null;
+    document.getElementById('montoInput').value='';
+    document.getElementById('descInput').value='';
+    document.getElementById('notaInput').value='';
+    document.getElementById('montoLabel').textContent=`Monto (${state.moneda})`;
+    document.getElementById('receiptPreview').style.display='none';
+    document.getElementById('removeReceiptBtn').style.display='none';
+    document.getElementById('receiptInput').value='';
+    document.getElementById('asumidoCheck').checked=false;
+    document.getElementById('asumidoToggleRow').classList.remove('active');
+    document.getElementById('asumidoSub').textContent='Se descuenta directo del saldo final';
+    document.getElementById('whoW').textContent=nW();
+    document.getElementById('whoR').textContent=nR();
+    state._pendingReceipt=undefined;
+    updateWhoButtons();renderCatsGrid('catsGrid',null,'selectCat');
   }
-  if (id === 'salarios') {
-    document.getElementById('salW').value = state.salarios.W || '';
-    document.getElementById('salR').value = state.salarios.R || '';
+  if(id==='salarios'){
+    document.getElementById('salLabelW').textContent=nW();
+    document.getElementById('salLabelR').textContent=nR();
+    document.getElementById('salW').value=state.salarios.W||'';
+    document.getElementById('salR').value=state.salarios.R||'';
   }
-  if (id === 'categorias') renderCatsList();
-  if (id === 'cerrar') {
-    const t = getTotales(), diff = Math.abs(t.saldoW);
-    document.getElementById('cerrarResumen').innerHTML = `
+  if(id==='categorias')renderCatsList();
+  if(id==='cerrar'){
+    const t=getTotales(),diff=Math.abs(t.saldoW);
+    const quien=t.saldoW>0?`${nR()} le debe a ${nW()}`:`${nW()} le debe a ${nR()}`;
+    document.getElementById('cerrarResumen').innerHTML=`
       <div class="highlight-box ${t.saldoW>0?'positive':'negative'}" style="margin-bottom:12px;">
-        <div class="highlight-label">${diff>0.01?(t.saldoW>0?'Rosario le debe a William':'William le debe a Rosario'):'¡Están al día!'}</div>
+        <div class="highlight-label">${diff>0.01?quien:'¡Están al día!'}</div>
         <div class="highlight-amount" style="color:${t.saldoW>0?'var(--success)':'var(--primary)'};">${fmt(diff)}</div>
       </div>
       <div class="resumen-row"><div class="resumen-label">Total gastos</div><div class="resumen-val">${fmt(t.total)}</div></div>
       <div class="resumen-row"><div class="resumen-label">Gastos registrados</div><div class="resumen-val">${state.gastos.length}</div></div>`;
   }
+  if(id==='recurrente'){
+    document.getElementById('recWhoW').textContent=nW();
+    document.getElementById('recWhoR').textContent=nR();
+    document.getElementById('recMontoLabel').textContent=`Monto estimado (${state.moneda})`;
+  }
   document.getElementById('modal-'+id).classList.add('open');
 }
-function closeModal(id) { document.getElementById('modal-'+id).classList.remove('open'); }
+function closeModal(id){document.getElementById('modal-'+id).classList.remove('open');}
 
-// ── Who selectors ────────────────────────────────────────────────────────────
-function selectWho(w) { state.selectedWho = w; updateWhoButtons(); }
-function updateWhoButtons() {
-  document.getElementById('whoW').className = 'who-btn' + (state.selectedWho==='W'?' selected-w':'');
-  document.getElementById('whoR').className = 'who-btn' + (state.selectedWho==='R'?' selected-r':'');
+// ─── Who / Cat ────────────────────────────────────────────────────────────────
+function selectWho(w){state.selectedWho=w;updateWhoButtons();}
+function updateWhoButtons(){
+  document.getElementById('whoW').className='who-btn'+(state.selectedWho==='W'?' selected-w':'');
+  document.getElementById('whoR').className='who-btn'+(state.selectedWho==='R'?' selected-r':'');
 }
-function selectRecWho(w) { state.selectedRecWho = w; updateRecWhoButtons(); }
-function updateRecWhoButtons() {
-  document.getElementById('recWhoW').className = 'who-btn' + (state.selectedRecWho==='W'?' selected-w':'');
-  document.getElementById('recWhoR').className = 'who-btn' + (state.selectedRecWho==='R'?' selected-r':'');
+function selectRecWho(w){state.selectedRecWho=w;updateRecWhoButtons();}
+function updateRecWhoButtons(){
+  document.getElementById('recWhoW').className='who-btn'+(state.selectedRecWho==='W'?' selected-w':'');
+  document.getElementById('recWhoR').className='who-btn'+(state.selectedRecWho==='R'?' selected-r':'');
+}
+function renderCatsGrid(gridId,selectedCat,onClickFn){
+  const el=document.getElementById(gridId);if(!el)return;
+  el.innerHTML=state.categorias.map(c=>`<button class="cat-btn ${selectedCat===c.name?'selected':''}" onclick="${onClickFn}('${c.name}')"><span class="cat-icon">${c.icon}</span>${c.name}</button>`).join('');
+}
+function selectCat(n){state.selectedCat=n;renderCatsGrid('catsGrid',n,'selectCat');}
+function selectRecCat(n){state.selectedRecCat=n;renderCatsGrid('recCatsGrid',n,'selectRecCat');}
+
+// ─── Toggle asumido ───────────────────────────────────────────────────────────
+function toggleAsumido(){
+  const checked=document.getElementById('asumidoCheck').checked;
+  document.getElementById('asumidoToggleRow').classList.toggle('active',checked);
+  document.getElementById('asumidoSub').textContent=checked?'No se repartirá — se descuenta del saldo directamente':'Se descuenta directo del saldo final';
 }
 
-// ── Category grids ──────────────────────────────────────────────────────────
-function renderCatsGrid(gridId, selectedCat, onClickFn) {
-  const el = document.getElementById(gridId);
-  if (!el) return;
-  el.innerHTML = state.categorias.map(c =>
-    `<button class="cat-btn ${selectedCat===c.name?'selected':''}" onclick="${onClickFn}('${c.name}')">
-      <span class="cat-icon">${c.icon}</span>${c.name}
-    </button>`).join('');
-}
-function selectCat(n) { state.selectedCat = n; renderCatsGrid('catsGrid', n, 'selectCat'); }
-function selectRecCat(n) { state.selectedRecCat = n; renderCatsGrid('recCatsGrid', n, 'selectRecCat'); }
-
-// ── Receipt ─────────────────────────────────────────────────────────────────
-function previewReceipt(input) {
-  if (!input.files || !input.files[0]) return;
-  const reader = new FileReader();
-  reader.onload = e => {
-    state._pendingReceipt = e.target.result;
-    document.getElementById('receiptPreview').src = e.target.result;
-    document.getElementById('receiptPreview').style.display = 'block';
-    document.getElementById('removeReceiptBtn').style.display = 'block';
-  };
+// ─── Receipt ──────────────────────────────────────────────────────────────────
+function previewReceipt(input){
+  if(!input.files||!input.files[0])return;
+  const reader=new FileReader();
+  reader.onload=e=>{state._pendingReceipt=e.target.result;document.getElementById('receiptPreview').src=e.target.result;document.getElementById('receiptPreview').style.display='block';document.getElementById('removeReceiptBtn').style.display='block';};
   reader.readAsDataURL(input.files[0]);
 }
-function removeReceipt() {
-  state._pendingReceipt = null;
-  document.getElementById('receiptPreview').style.display = 'none';
-  document.getElementById('removeReceiptBtn').style.display = 'none';
-  document.getElementById('receiptInput').value = '';
-}
-function verRecibo(gastoId, periodoIdx) {
-  const arr = periodoIdx !== null ? (state.periodos[periodoIdx]?.gastos || []) : state.gastos;
-  const g = arr.find(x => x.id === gastoId);
-  if (!g?.receipt) return;
-  document.getElementById('reciboViewer').src = g.receipt;
-  openModal('recibo');
+function removeReceipt(){state._pendingReceipt=null;document.getElementById('receiptPreview').style.display='none';document.getElementById('removeReceiptBtn').style.display='none';document.getElementById('receiptInput').value='';}
+function verRecibo(gastoId,periodoIdx){
+  const arr=periodoIdx!==null?(state.periodos[periodoIdx]?.gastos||[]):state.gastos;
+  const g=arr.find(x=>x.id===gastoId);if(!g?.receipt)return;
+  document.getElementById('reciboViewer').src=g.receipt;openModal('recibo');
 }
 
-// ── Save / Edit Gasto ───────────────────────────────────────────────────────
-function guardarGasto() {
-  const monto = parseFloat(document.getElementById('montoInput').value);
-  const desc = document.getElementById('descInput').value.trim();
-  const nota = document.getElementById('notaInput').value.trim();
-  if (!monto || monto <= 0) { alert('Ingresa un monto válido'); return; }
-  if (!desc) { alert('Ingresa una descripción'); return; }
-  if (!state.selectedCat) { alert('Selecciona una categoría'); return; }
-
-  const arr = state.editingPeriodoIdx !== null ? state.periodos[state.editingPeriodoIdx].gastos : state.gastos;
-
-  if (state.editingGastoId) {
-    const g = arr.find(x => x.id === state.editingGastoId);
-    if (g) {
-      g.quien = state.selectedWho; g.monto = monto; g.desc = desc;
-      g.categoria = state.selectedCat; g.nota = nota;
-      if (state._pendingReceipt !== undefined) g.receipt = state._pendingReceipt;
-      if (state.editingPeriodoIdx !== null) {
-        state.periodos[state.editingPeriodoIdx].total = arr.reduce((s, x) => s + x.monto, 0);
-      }
-    }
-  } else {
-    state.gastos.push({
-      id: Date.now().toString(), quien: state.selectedWho, monto, desc,
-      categoria: state.selectedCat, nota, ts: Date.now(),
-      receipt: state._pendingReceipt || null, recurrente: false
-    });
+// ─── Guardar gasto ────────────────────────────────────────────────────────────
+function guardarGasto(){
+  const monto=parseFloat(document.getElementById('montoInput').value);
+  const desc=document.getElementById('descInput').value.trim();
+  const nota=document.getElementById('notaInput').value.trim();
+  const asumido=document.getElementById('asumidoCheck').checked;
+  if(!monto||monto<=0){alert('Ingresa un monto válido');return;}
+  if(!desc){alert('Ingresa una descripción');return;}
+  if(!state.selectedCat){alert('Selecciona una categoría');return;}
+  const arr=state.editingPeriodoIdx!==null?state.periodos[state.editingPeriodoIdx].gastos:state.gastos;
+  if(state.editingGastoId){
+    const g=arr.find(x=>x.id===state.editingGastoId);
+    if(g){g.quien=state.selectedWho;g.monto=monto;g.desc=desc;g.categoria=state.selectedCat;g.nota=nota;g.asumido=asumido;if(state._pendingReceipt!==undefined)g.receipt=state._pendingReceipt;if(state.editingPeriodoIdx!==null)state.periodos[state.editingPeriodoIdx].total=arr.reduce((s,x)=>s+x.monto,0);}
+  }else{
+    state.gastos.push({id:Date.now().toString(),quien:state.selectedWho,monto,desc,categoria:state.selectedCat,nota,ts:Date.now(),receipt:state._pendingReceipt||null,recurrente:false,asumido});
   }
-  save(); closeModal('agregar'); updateHeader();
-  if (state.editingPeriodoIdx !== null) renderHistorial(); else renderGastos();
-  state.editingGastoId = null; state.editingPeriodoIdx = null;
+  save();closeModal('agregar');updateHeader();
+  if(state.editingPeriodoIdx!==null)renderHistorial();else renderGastos();
+  state.editingGastoId=null;state.editingPeriodoIdx=null;
 }
-
-function openEditGasto(id) {
-  const g = state.gastos.find(x => x.id === id); if (!g) return;
-  state.editingGastoId = id; state.editingPeriodoIdx = null;
-  _fillGastoModal(g, 'Editar gasto', 'Guardar cambios');
-}
-function openEditGastoPeriodo(pi, id) {
-  const g = state.periodos[pi]?.gastos.find(x => x.id === id); if (!g) return;
-  state.editingGastoId = id; state.editingPeriodoIdx = pi;
-  _fillGastoModal(g, 'Editar gasto (historial)', 'Guardar cambios');
-}
-function _fillGastoModal(g, title, btnText) {
-  document.getElementById('modalAgregarTitle').textContent = title;
-  document.getElementById('guardarGastoBtn').textContent = btnText;
-  state.selectedWho = g.quien; state.selectedCat = g.categoria;
-  document.getElementById('montoInput').value = g.monto;
-  document.getElementById('descInput').value = g.desc;
-  document.getElementById('notaInput').value = g.nota || '';
-  state._pendingReceipt = undefined;
-  const prev = document.getElementById('receiptPreview');
-  const remBtn = document.getElementById('removeReceiptBtn');
-  if (g.receipt) { prev.src = g.receipt; prev.style.display = 'block'; remBtn.style.display = 'block'; }
-  else { prev.style.display = 'none'; remBtn.style.display = 'none'; }
-  document.getElementById('receiptInput').value = '';
-  updateWhoButtons(); renderCatsGrid('catsGrid', g.categoria, 'selectCat');
+function openEditGasto(id){const g=state.gastos.find(x=>x.id===id);if(!g)return;state.editingGastoId=id;state.editingPeriodoIdx=null;_fillGastoModal(g,'Editar gasto','Guardar cambios');}
+function openEditGastoPeriodo(pi,id){const g=state.periodos[pi]?.gastos.find(x=>x.id===id);if(!g)return;state.editingGastoId=id;state.editingPeriodoIdx=pi;_fillGastoModal(g,'Editar gasto (historial)','Guardar cambios');}
+function _fillGastoModal(g,title,btnText){
+  document.getElementById('modalAgregarTitle').textContent=title;
+  document.getElementById('guardarGastoBtn').textContent=btnText;
+  state.selectedWho=g.quien;state.selectedCat=g.categoria;
+  document.getElementById('montoInput').value=g.monto;
+  document.getElementById('descInput').value=g.desc;
+  document.getElementById('notaInput').value=g.nota||'';
+  document.getElementById('montoLabel').textContent=`Monto (${state.moneda})`;
+  document.getElementById('whoW').textContent=nW();
+  document.getElementById('whoR').textContent=nR();
+  const asumido=g.asumido||false;
+  document.getElementById('asumidoCheck').checked=asumido;
+  document.getElementById('asumidoToggleRow').classList.toggle('active',asumido);
+  document.getElementById('asumidoSub').textContent=asumido?'No se repartirá — se descuenta del saldo directamente':'Se descuenta directo del saldo final';
+  state._pendingReceipt=undefined;
+  const prev=document.getElementById('receiptPreview'),remBtn=document.getElementById('removeReceiptBtn');
+  if(g.receipt){prev.src=g.receipt;prev.style.display='block';remBtn.style.display='block';}
+  else{prev.style.display='none';remBtn.style.display='none';}
+  document.getElementById('receiptInput').value='';
+  updateWhoButtons();renderCatsGrid('catsGrid',g.categoria,'selectCat');
   document.getElementById('modal-agregar').classList.add('open');
 }
+function eliminarGasto(id){if(!confirm('¿Eliminar este gasto?'))return;state.gastos=state.gastos.filter(g=>g.id!==id);save();renderGastos();updateHeader();}
+function eliminarGastoPeriodo(pi,id){if(!confirm('¿Eliminar este gasto del historial?'))return;state.periodos[pi].gastos=state.periodos[pi].gastos.filter(g=>g.id!==id);state.periodos[pi].total=state.periodos[pi].gastos.reduce((s,g)=>s+g.monto,0);save();renderHistorial();}
 
-function eliminarGasto(id) {
-  if (!confirm('¿Eliminar este gasto?')) return;
-  state.gastos = state.gastos.filter(g => g.id !== id);
-  save(); renderGastos(); updateHeader();
-}
-function eliminarGastoPeriodo(pi, id) {
-  if (!confirm('¿Eliminar este gasto del historial?')) return;
-  state.periodos[pi].gastos = state.periodos[pi].gastos.filter(g => g.id !== id);
-  state.periodos[pi].total = state.periodos[pi].gastos.reduce((s,g) => s+g.monto, 0);
-  save(); renderHistorial();
+// ─── Salarios ─────────────────────────────────────────────────────────────────
+function guardarSalarios(){
+  const w=parseFloat(document.getElementById('salW').value);
+  const r=parseFloat(document.getElementById('salR').value);
+  if(w>0)state.salarios.W=w;if(r>0)state.salarios.R=r;
+  save();closeModal('salarios');updateHeader();renderGastos();
 }
 
-// ── Salarios ─────────────────────────────────────────────────────────────────
-function guardarSalarios() {
-  const w = parseFloat(document.getElementById('salW').value);
-  const r = parseFloat(document.getElementById('salR').value);
-  if (w > 0) state.salarios.W = w;
-  if (r > 0) state.salarios.R = r;
-  save(); closeModal('salarios'); updateHeader(); renderGastos();
+// ─── Categorías ───────────────────────────────────────────────────────────────
+function renderCatsList(){
+  const el=document.getElementById('catsList');if(!el)return;
+  el.innerHTML=state.categorias.map((c,i)=>`<div class="cat-manage"><span class="cat-manage-icon">${c.icon}</span><span class="cat-manage-name">${c.name}</span><span class="cat-manage-del" onclick="eliminarCategoria(${i})">✕</span></div>`).join('');
 }
+function agregarCategoria(){
+  const icon=document.getElementById('newCatIcon').value.trim(),name=document.getElementById('newCatName').value.trim();
+  if(!icon||!name){alert('Ingresa un emoji y un nombre');return;}
+  state.categorias.push({icon,name});document.getElementById('newCatIcon').value='';document.getElementById('newCatName').value='';save();renderCatsList();
+}
+function eliminarCategoria(i){if(!confirm('¿Eliminar esta categoría?'))return;state.categorias.splice(i,1);save();renderCatsList();}
 
-// ── Categorías ───────────────────────────────────────────────────────────────
-function renderCatsList() {
-  const el = document.getElementById('catsList'); if (!el) return;
-  el.innerHTML = state.categorias.map((c, i) =>
-    `<div class="cat-manage"><span class="cat-manage-icon">${c.icon}</span><span class="cat-manage-name">${c.name}</span><span class="cat-manage-del" onclick="eliminarCategoria(${i})">✕</span></div>`
-  ).join('');
-}
-function agregarCategoria() {
-  const icon = document.getElementById('newCatIcon').value.trim();
-  const name = document.getElementById('newCatName').value.trim();
-  if (!icon || !name) { alert('Ingresa un emoji y un nombre'); return; }
-  state.categorias.push({ icon, name });
-  document.getElementById('newCatIcon').value = '';
-  document.getElementById('newCatName').value = '';
-  save(); renderCatsList();
-}
-function eliminarCategoria(i) {
-  if (!confirm('¿Eliminar esta categoría?')) return;
-  state.categorias.splice(i, 1); save(); renderCatsList();
-}
-
-// ── Recurrentes ──────────────────────────────────────────────────────────────
-function abrirNuevoRecurrente() {
-  state.editingRecurrenteIdx = null;
-  state.selectedRecWho = 'W'; state.selectedRecCat = null;
-  document.getElementById('modalRecurrenteTitle').textContent = 'Nuevo gasto fijo';
-  document.getElementById('guardarRecurrenteBtn').textContent = 'Guardar gasto fijo';
-  document.getElementById('recMontoInput').value = '';
-  document.getElementById('recDescInput').value = '';
-  updateRecWhoButtons(); renderCatsGrid('recCatsGrid', null, 'selectRecCat');
+// ─── Recurrentes ──────────────────────────────────────────────────────────────
+function abrirNuevoRecurrente(){
+  state.editingRecurrenteIdx=null;state.selectedRecWho='W';state.selectedRecCat=null;
+  document.getElementById('modalRecurrenteTitle').textContent='Nuevo gasto fijo';
+  document.getElementById('guardarRecurrenteBtn').textContent='Guardar gasto fijo';
+  document.getElementById('recMontoInput').value='';document.getElementById('recDescInput').value='';
+  document.getElementById('recWhoW').textContent=nW();document.getElementById('recWhoR').textContent=nR();
+  updateRecWhoButtons();renderCatsGrid('recCatsGrid',null,'selectRecCat');
   document.getElementById('modal-recurrente').classList.add('open');
 }
-function guardarRecurrente() {
-  const monto = parseFloat(document.getElementById('recMontoInput').value);
-  const desc = document.getElementById('recDescInput').value.trim();
-  if (!monto || monto <= 0) { alert('Ingresa un monto válido'); return; }
-  if (!desc) { alert('Ingresa una descripción'); return; }
-  if (!state.selectedRecCat) { alert('Selecciona una categoría'); return; }
-  const rec = { id: Date.now().toString(), quien: state.selectedRecWho, monto, desc, categoria: state.selectedRecCat };
-  if (state.editingRecurrenteIdx !== null) state.recurrentes[state.editingRecurrenteIdx] = rec;
-  else state.recurrentes.push(rec);
-  state.editingRecurrenteIdx = null;
-  save(); closeModal('recurrente'); renderRecurrentes();
+function guardarRecurrente(){
+  const monto=parseFloat(document.getElementById('recMontoInput').value),desc=document.getElementById('recDescInput').value.trim();
+  if(!monto||monto<=0){alert('Ingresa un monto válido');return;}
+  if(!desc){alert('Ingresa una descripción');return;}
+  if(!state.selectedRecCat){alert('Selecciona una categoría');return;}
+  const rec={id:Date.now().toString(),quien:state.selectedRecWho,monto,desc,categoria:state.selectedRecCat};
+  if(state.editingRecurrenteIdx!==null)state.recurrentes[state.editingRecurrenteIdx]=rec;else state.recurrentes.push(rec);
+  state.editingRecurrenteIdx=null;save();closeModal('recurrente');renderRecurrentes();
 }
-function openEditRecurrente(i) {
-  const r = state.recurrentes[i]; if (!r) return;
-  state.editingRecurrenteIdx = i;
-  state.selectedRecWho = r.quien; state.selectedRecCat = r.categoria;
-  document.getElementById('modalRecurrenteTitle').textContent = 'Editar gasto fijo';
-  document.getElementById('guardarRecurrenteBtn').textContent = 'Guardar cambios';
-  document.getElementById('recMontoInput').value = r.monto;
-  document.getElementById('recDescInput').value = r.desc;
-  updateRecWhoButtons(); renderCatsGrid('recCatsGrid', r.categoria, 'selectRecCat');
+function openEditRecurrente(i){
+  const r=state.recurrentes[i];if(!r)return;state.editingRecurrenteIdx=i;
+  state.selectedRecWho=r.quien;state.selectedRecCat=r.categoria;
+  document.getElementById('modalRecurrenteTitle').textContent='Editar gasto fijo';
+  document.getElementById('guardarRecurrenteBtn').textContent='Guardar cambios';
+  document.getElementById('recMontoInput').value=r.monto;document.getElementById('recDescInput').value=r.desc;
+  document.getElementById('recWhoW').textContent=nW();document.getElementById('recWhoR').textContent=nR();
+  updateRecWhoButtons();renderCatsGrid('recCatsGrid',r.categoria,'selectRecCat');
   document.getElementById('modal-recurrente').classList.add('open');
 }
-function eliminarRecurrente(i) {
-  if (!confirm('¿Eliminar este gasto fijo?')) return;
-  state.recurrentes.splice(i, 1); save(); renderRecurrentes();
-}
-function mostrarAlertaRecurrentes() {
-  if (!state.recurrentes.length) return;
-  document.getElementById('recurrentesAlertList').innerHTML = state.recurrentes.map((r, i) => {
-    const cat = state.categorias.find(c => c.name === r.categoria) || { icon: '💰' };
-    return `<div class="recurrentes-check">
-      <input type="checkbox" id="rchk-${i}" checked>
-      <label for="rchk-${i}">${cat.icon} ${r.desc} — ${fmt(r.monto)} · ${r.quien==='W'?'William':'Rosario'}</label>
-    </div>`;
+function eliminarRecurrente(i){if(!confirm('¿Eliminar este gasto fijo?'))return;state.recurrentes.splice(i,1);save();renderRecurrentes();}
+function mostrarAlertaRecurrentes(){
+  if(!state.recurrentes.length)return;
+  document.getElementById('recurrentesAlertList').innerHTML=state.recurrentes.map((r,i)=>{
+    const cat=state.categorias.find(c=>c.name===r.categoria)||{icon:'💰'};
+    return `<div class="recurrentes-check"><input type="checkbox" id="rchk-${i}" checked><label for="rchk-${i}">${cat.icon} ${r.desc} — ${fmt(r.monto)} · ${r.quien==='W'?nW():nR()}</label></div>`;
   }).join('');
   document.getElementById('modal-recurrentes-alert').classList.add('open');
 }
-function agregarRecurrentesSeleccionados() {
-  const now = Date.now();
-  state.recurrentes.forEach((r, i) => {
-    if (document.getElementById('rchk-'+i)?.checked) {
-      state.gastos.push({ id: (now+i).toString(), quien: r.quien, monto: r.monto, desc: r.desc, categoria: r.categoria, nota: '', ts: now, receipt: null, recurrente: true });
-    }
-  });
-  save(); closeModal('recurrentes-alert'); renderGastos(); updateHeader();
+function agregarRecurrentesSeleccionados(){
+  const now=Date.now();
+  state.recurrentes.forEach((r,i)=>{if(document.getElementById('rchk-'+i)?.checked)state.gastos.push({id:(now+i).toString(),quien:r.quien,monto:r.monto,desc:r.desc,categoria:r.categoria,nota:'',ts:now,receipt:null,recurrente:true,asumido:false});});
+  save();closeModal('recurrentes-alert');renderGastos();updateHeader();
 }
 
-// ── Cerrar período ───────────────────────────────────────────────────────────
-function cerrarPeriodo() {
-  const t = getTotales(), p = getPct();
-  state.periodos.push({
-    fecha: new Date().toLocaleDateString('es-CA', { day: 'numeric', month: 'long', year: 'numeric' }),
-    gastos: [...state.gastos], total: t.total,
-    pctW: p.W, pctR: p.R, deuda: Math.abs(t.saldoW),
-    quien: t.saldoW > 0 ? 'Rosario pagó a William' : 'William pagó a Rosario',
-    salarios: { ...state.salarios }
-  });
-  state.gastos = [];
-  state.salarios = { W: 0, R: 0 };
-  save(); closeModal('cerrar');
-  if (state.recurrentes.length) setTimeout(mostrarAlertaRecurrentes, 400);
+// ─── Cerrar período ───────────────────────────────────────────────────────────
+function cerrarPeriodo(){
+  const t=getTotales(),p=getPct();
+  state.periodos.push({fecha:new Date().toLocaleDateString('es-CA',{day:'numeric',month:'long',year:'numeric'}),gastos:[...state.gastos],total:t.total,pctW:p.W,pctR:p.R,metodo:state.metodo,deuda:Math.abs(t.saldoW),quien:t.saldoW>0?`${nR()} pagó a ${nW()}`:`${nW()} pagó a ${nR()}`,salarios:{...state.salarios}});
+  state.gastos=[];state.salarios={W:0,R:0};
+  save();closeModal('cerrar');
+  if(state.recurrentes.length)setTimeout(mostrarAlertaRecurrentes,400);
   showTab('historial');
 }
 
-// ── Reset ─────────────────────────────────────────────────────────────────────
-function resetData() {
-  if (!confirm('¿Borrar todos los datos locales?')) return;
-  state.gastos = []; state.periodos = []; state.recurrentes = []; state.salarios = { W: 0, R: 0 };
-  save(); showTab('gastos');
-}
+// ─── Reset / User ─────────────────────────────────────────────────────────────
+function resetData(){if(!confirm('¿Borrar TODOS los datos locales?'))return;state.gastos=[];state.periodos=[];state.recurrentes=[];state.salarios={W:0,R:0};save();showTab('gastos');}
+function toggleUser(){state.usuario=state.usuario===nW()?nR():nW();save();updateHeader();}
 
-// ── User ─────────────────────────────────────────────────────────────────────
-function toggleUser() {
-  state.usuario = state.usuario === 'William' ? 'Rosario' : 'William';
-  save(); updateHeader();
-}
+// ─── Botón atrás inteligente ──────────────────────────────────────────────────
+window.addEventListener('popstate',()=>{
+  const openMod=document.querySelector('.modal-overlay.open');
+  if(openMod){openMod.classList.remove('open');history.pushState(null,'',location.href);return;}
+  if(state.currentTab!=='gastos'){showTab('gastos');history.pushState(null,'',location.href);return;}
+});
+history.pushState(null,'',location.href);
 
-// ── Sheets config UI ─────────────────────────────────────────────────────────
-function guardarSheetsCfg() {
-  const url = document.getElementById('cfgScriptUrl').value.trim();
-  if (!url) { alert('Ingresa la URL del script'); return; }
-  sheetsCfg = { scriptUrl: url }; saveSheetsCfg(sheetsCfg);
-  alert('¡Configurado! Sincronizando...');
-  syncFromCloud(false); renderConfig();
-}
+// ─── Onboarding ───────────────────────────────────────────────────────────────
+let obStep=0;
+const obSteps=[
+  {
+    emoji:'👋',title:'¡Bienvenidos!',sub:'Configura la app para tu hogar en unos minutos.',
+    render:()=>`
+      <span class="ob-label">Nombre de la persona 1</span>
+      <input class="ob-input" id="ob-nW" placeholder="Ej: Carlos" value="${nW()!=='William'?nW():''}">
+      <span class="ob-label" style="margin-top:10px;display:block;">Nombre de la persona 2</span>
+      <input class="ob-input" id="ob-nR" placeholder="Ej: María" value="${nR()!=='Rosario'?nR():''}">`,
+    next:()=>{const w=document.getElementById('ob-nW').value.trim(),r=document.getElementById('ob-nR').value.trim();if(!w||!r){alert('Ingresa ambos nombres');return false;}state.nombreW=w;state.nombreR=r;return true;}
+  },
+  {
+    emoji:'💰',title:'Moneda y reparto',sub:'¿Con qué moneda trabajan y cómo dividen los gastos?',
+    render:()=>`
+      <span class="ob-label">Moneda</span>
+      <div class="ob-grid" style="margin-top:6px;margin-bottom:12px;">
+        ${['CAD $','USD $','COP $','MXN $','EUR €','GBP £'].map(m=>`<button class="ob-chip ${state.moneda===m?'sel':''}" onclick="obSelMoneda('${m}')">${m}</button>`).join('')}
+      </div>
+      <span class="ob-label">¿Otra moneda? Escríbela</span>
+      <input class="ob-input" id="ob-moneda-custom" placeholder="Ej: PEN S/." style="margin-bottom:12px;">
+      <span class="ob-label">Método de reparto</span>
+      <div class="ob-method" style="margin-top:6px;">
+        <button class="ob-meth-btn ${state.metodo==='proporcional'?'sel':''}" onclick="obSelMetodo('proporcional')"><span class="ob-meth-icon">📊</span>Por salario</button>
+        <button class="ob-meth-btn ${state.metodo==='50/50'?'sel':''}" onclick="obSelMetodo('50/50')"><span class="ob-meth-icon">⚖️</span>50 / 50</button>
+      </div>`,
+    next:()=>{const c=document.getElementById('ob-moneda-custom')?.value.trim();if(c)state.moneda=c;return true;}
+  },
+  {
+    emoji:'☁️',title:'Sincronización',sub:'Conecta Google Sheets para que ambos celulares vean los mismos datos en tiempo real.',
+    render:()=>`
+      <div class="ob-step-box"><span class="ob-step-num">1</span><span class="ob-step-text">Crea una hoja en Google Sheets</span><br><a href="https://sheets.new" target="_blank" style="margin-top:5px;display:inline-block;">→ Abrir sheets.new</a></div>
+      <div class="ob-step-box">
+        <span class="ob-step-num">2</span><span class="ob-step-text">Extensiones → Apps Script → pega este código:</span>
+        <div class="ob-code-box" id="obCodePreview">${APPS_SCRIPT_CODE.substring(0,120)}...</div>
+        <button class="ob-copy-btn" onclick="copiarScript()">📋 Copiar código completo</button>
+      </div>
+      <div class="ob-step-box"><span class="ob-step-num">3</span><span class="ob-step-text">Implementar → Nueva implementación → Aplicación web → Acceso: Cualquier usuario</span></div>
+      <div class="ob-step-box">
+        <span class="ob-step-num">4</span><span class="ob-step-text">Pega aquí la URL que aparece:</span>
+        <input class="ob-input" id="ob-scriptUrl" placeholder="https://script.google.com/macros/s/..." style="margin-top:6px;" value="${sheetsCfg.scriptUrl||''}">
+      </div>`,
+    next:()=>{const url=document.getElementById('ob-scriptUrl')?.value.trim();if(url){sheetsCfg={scriptUrl:url};saveSheetsCfg(sheetsCfg);}return true;}
+  },
+  {
+    emoji:'🎉',title:'¡Todo listo!',sub:'Ya pueden empezar a registrar gastos. Pueden cambiar cualquier ajuste en Config.',
+    render:()=>`<div style="background:rgba(255,255,255,0.15);border-radius:12px;padding:16px;">
+      <div style="font-size:13px;font-weight:700;color:white;margin-bottom:10px;">Configuración:</div>
+      <div style="font-size:13px;color:rgba(255,255,255,0.9);font-weight:600;line-height:2.2;">
+        👤 ${state.nombreW} y ${state.nombreR}<br>
+        💵 ${state.moneda}<br>
+        ⚖️ ${state.metodo==='50/50'?'50 / 50':'Proporcional por salario'}<br>
+        ☁️ ${sheetsCfg.scriptUrl?'✅ Sheets conectado':'⚪ Sin Sheets (puedes conectarlo en Config)'}
+      </div>
+    </div>`,
+    next:()=>true
+  }
+];
 
-// ── Auto-sync ─────────────────────────────────────────────────────────────────
+function copiarScript(){
+  navigator.clipboard.writeText(APPS_SCRIPT_CODE).then(()=>{
+    const btn=document.querySelector('.ob-copy-btn');
+    if(btn){btn.textContent='✅ ¡Copiado!';setTimeout(()=>btn.textContent='📋 Copiar código completo',2500);}
+  }).catch(()=>alert('Copia este código:\n\n'+APPS_SCRIPT_CODE));
+}
+function obSelMoneda(m){state.moneda=m;document.querySelectorAll('.ob-chip').forEach(b=>b.classList.toggle('sel',b.textContent===m));}
+function obSelMetodo(m){state.metodo=m;document.querySelectorAll('.ob-meth-btn').forEach(b=>b.classList.toggle('sel',b.textContent.includes(m==='50/50'?'50':'salario')));}
+
+function renderObStep(){
+  const s=obSteps[obStep];
+  const dots=obSteps.map((_,i)=>`<div class="ob-dot ${i===obStep?'active':''}"></div>`).join('');
+  const isLast=obStep===obSteps.length-1;
+  document.getElementById('obContent').innerHTML=`
+    <div class="ob-dots">${dots}</div>
+    <div class="ob-emoji">${s.emoji}</div>
+    <div class="ob-title">${s.title}</div>
+    <div class="ob-sub">${s.sub}</div>
+    <div class="ob-card">${s.render()}</div>
+    <button class="ob-btn" onclick="obNext()">${isLast?'¡Empezar!':'Siguiente →'}</button>
+    ${!isLast?`<button class="ob-skip" onclick="obSkip()">Omitir configuración</button>`:''}`;
+}
+function obNext(){
+  if(!obSteps[obStep].next())return;
+  if(obStep<obSteps.length-1){obStep++;renderObStep();return;}
+  state.onboardingDone=true;save();
+  document.getElementById('obOverlay').classList.remove('open');
+  updateHeader();renderGastos();
+}
+function obSkip(){state.onboardingDone=true;save();document.getElementById('obOverlay').classList.remove('open');updateHeader();renderGastos();}
+function reiniciarOnboarding(){obStep=0;renderObStep();document.getElementById('obOverlay').classList.add('open');}
+
+// ─── Auto-sync ────────────────────────────────────────────────────────────────
 let syncInterval;
-document.addEventListener('visibilitychange', () => {
-  if (document.hidden) clearInterval(syncInterval);
-  else { syncFromCloud(true); syncInterval = setInterval(() => syncFromCloud(true), 30000); }
+document.addEventListener('visibilitychange',()=>{
+  if(document.hidden)clearInterval(syncInterval);
+  else{syncFromCloud(true);syncInterval=setInterval(()=>syncFromCloud(true),30000);}
 });
-window.addEventListener('online', () => syncFromCloud(false));
-window.addEventListener('offline', () => setSyncIcon('📴', false, false));
+window.addEventListener('online',()=>syncFromCloud(false));
+window.addEventListener('offline',()=>setSyncIcon('📴',false,false));
+document.querySelectorAll('.modal-overlay').forEach(el=>{el.addEventListener('click',e=>{if(e.target===el)el.classList.remove('open');});});
 
-// ── Close modals on overlay click ─────────────────────────────────────────────
-document.querySelectorAll('.modal-overlay').forEach(el => {
-  el.addEventListener('click', e => { if (e.target === el) el.classList.remove('open'); });
-});
+// ─── Arrancar app ─────────────────────────────────────────────────────────────
+function arrancarApp(){
+  updateHeader();renderGastos();
+  if(!state.onboardingDone){obStep=0;renderObStep();document.getElementById('obOverlay').classList.add('open');}
+  if(sheetsCfg.scriptUrl){setSyncIcon('🔄',true,false);syncFromCloud(true);syncInterval=setInterval(()=>syncFromCloud(true),30000);}
+}
 
-// ── Init ──────────────────────────────────────────────────────────────────────
+// ─── Init ─────────────────────────────────────────────────────────────────────
 load();
-updateHeader();
-renderGastos();
-if (sheetsCfg.scriptUrl) {
-  setSyncIcon('🔄', true, false);
-  syncFromCloud(true);
-  syncInterval = setInterval(() => syncFromCloud(true), 30000);
+if(!state.accesoVerificado&&sheetsCfg.scriptUrl){
+  // Mostrar pantalla de acceso
+  document.getElementById('accessScreen').classList.add('open');
+}else{
+  // Sin Sheets configurado o ya verificado: entrar directo
+  arrancarApp();
 }
 </script>
 </body>
