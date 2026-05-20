@@ -481,13 +481,28 @@ async function sheetsRequest(action,payload){
   if(!sheetsCfg.scriptUrl)return null;
   setSyncIcon('🔄',true,false);
   try{
-    const res=await fetch(sheetsCfg.scriptUrl,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({action,...payload})});
+    const res=await fetch(sheetsCfg.scriptUrl,{
+      method:'POST',
+      headers:{'Content-Type':'text/plain'},
+      body:JSON.stringify({action,...payload}),
+      redirect:'follow'
+    });
     if(!res.ok)throw new Error('HTTP '+res.status);
     const data=await res.json();
     setSyncIcon('✅',false,false);
     setTimeout(()=>setSyncIcon('☁️',false,false),2500);
     return data;
   }catch(e){setSyncIcon(navigator.onLine?'⚠️':'📴',false,false);return null;}
+}
+
+async function validarCodigoRemoto(codigo){
+  if(!sheetsCfg.scriptUrl)return null;
+  try{
+    const url=sheetsCfg.scriptUrl+'?action=validarCodigo&codigo='+encodeURIComponent(codigo);
+    const res=await fetch(url,{redirect:'follow'});
+    if(!res.ok)throw new Error('HTTP '+res.status);
+    return await res.json();
+  }catch(e){return null;}
 }
 async function sheetsSave(){
   if(!sheetsCfg.scriptUrl)return;
@@ -576,7 +591,8 @@ async function verificarAcceso(){
     arrancarApp();return;
   }
   document.getElementById('accessInput').disabled=true;
-  const res=await sheetsRequest('validarCodigo',{codigo});
+  // Usar GET para validación — más compatible con móviles
+  const res=await validarCodigoRemoto(codigo);
   document.getElementById('accessInput').disabled=false;
   if(res&&res.valido){
     localStorage.setItem('gastosHogar_acceso','true');
