@@ -498,7 +498,12 @@ async function syncFromCloud(silent){
   const remote=await sheetsRequest('load',{});
   if(!remote||!remote.lastSyncTs)return;
   if(remote.lastSyncTs>(state.lastSyncTs||0)){
+    // Preserve local-only flags before overwriting state
+    const accesoVerificado=state.accesoVerificado;
+    const onboardingDone=state.onboardingDone;
     state={...state,...remote};
+    state.accesoVerificado=accesoVerificado;
+    state.onboardingDone=onboardingDone;
     localStorage.setItem('gastosHogar',JSON.stringify(remote));
     if(!silent&&remote.lastModBy&&remote.lastModBy!==state.usuario){
       showNotif('📲 '+remote.lastModBy+' actualizó los datos',fmtDateTime(remote.lastSyncTs));
