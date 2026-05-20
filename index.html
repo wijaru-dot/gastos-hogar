@@ -565,8 +565,8 @@ async function verificarAcceso(){
   const codigo=document.getElementById('accessInput').value.trim();
   if(!codigo){document.getElementById('accessError').classList.add('show');return;}
   if(!sheetsCfg.scriptUrl){
-    // Sin Sheets: acceso libre (para tú mismo)
-    state.accesoVerificado=true;save();
+    localStorage.setItem('gastosHogar_acceso','true');
+    state.accesoVerificado=true;
     document.getElementById('accessScreen').classList.remove('open');
     arrancarApp();return;
   }
@@ -574,7 +574,8 @@ async function verificarAcceso(){
   const res=await sheetsRequest('validarCodigo',{codigo});
   document.getElementById('accessInput').disabled=false;
   if(res&&res.valido){
-    state.accesoVerificado=true;save();
+    localStorage.setItem('gastosHogar_acceso','true');
+    state.accesoVerificado=true;
     document.getElementById('accessScreen').classList.remove('open');
     arrancarApp();
   }else{
@@ -1182,11 +1183,19 @@ function renderObStep(){
 function obNext(){
   if(!obSteps[obStep].next())return;
   if(obStep<obSteps.length-1){obStep++;renderObStep();return;}
-  state.onboardingDone=true;save();
+  state.onboardingDone=true;
+  localStorage.setItem('gastosHogar_onboarding','true');
+  save();
   document.getElementById('obOverlay').classList.remove('open');
   updateHeader();renderGastos();
 }
-function obSkip(){state.onboardingDone=true;save();document.getElementById('obOverlay').classList.remove('open');updateHeader();renderGastos();}
+function obSkip(){
+  state.onboardingDone=true;
+  localStorage.setItem('gastosHogar_onboarding','true');
+  save();
+  document.getElementById('obOverlay').classList.remove('open');
+  updateHeader();renderGastos();
+}
 function reiniciarOnboarding(){obStep=0;renderObStep();document.getElementById('obOverlay').classList.add('open');}
 
 // ─── Auto-sync ────────────────────────────────────────────────────────────────
@@ -1208,11 +1217,15 @@ function arrancarApp(){
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
 load();
-if(!state.accesoVerificado&&sheetsCfg.scriptUrl){
-  // Mostrar pantalla de acceso
+// Leer acceso y onboarding desde claves separadas (no se pierden con actualizaciones)
+const _acceso = localStorage.getItem('gastosHogar_acceso') === 'true';
+const _onboarding = localStorage.getItem('gastosHogar_onboarding') === 'true';
+state.accesoVerificado = _acceso;
+state.onboardingDone = _onboarding;
+
+if(!state.accesoVerificado && sheetsCfg.scriptUrl){
   document.getElementById('accessScreen').classList.add('open');
 }else{
-  // Sin Sheets configurado o ya verificado: entrar directo
   arrancarApp();
 }
 </script>
