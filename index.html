@@ -9,6 +9,17 @@
 <title>Gastos Hogar</title>
 <link rel="manifest" href="manifest.json">
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('service-worker.js')
+      .then(reg => {
+        // Verificar actualizaciones cada vez que se abre la app
+        reg.update();
+      });
+  });
+}
+</script>
 <style>
 :root{--bg:#f0f2f5;--card:#fff;--primary:#4f46e5;--primary-light:#eef2ff;--secondary:#ec4899;--secondary-light:#fdf2f8;--text:#1e1b4b;--text-muted:#6b7280;--border:#e5e7eb;--success:#10b981;--warning:#f59e0b;--danger:#dc2626;--radius:16px;--radius-sm:10px;}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
