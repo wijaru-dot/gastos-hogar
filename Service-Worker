@@ -6,7 +6,7 @@
 //  - Se actualiza automáticamente al detectar cambios
 // ============================================================
 
-const CACHE_VERSION = 'gastos-hogar-v1';
+const CACHE_VERSION = 'gastos-hogar-v2';
 const ASSETS = [
   './',
   'index.html',
